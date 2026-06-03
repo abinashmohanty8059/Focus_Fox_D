@@ -113,6 +113,22 @@
       </div>
     </div>
 
+    <!-- PDF Viewer Modal -->
+    <div id="pdf-viewer-modal" class="pdf-viewer-modal" style="display: none;">
+      <div class="pdf-viewer-container">
+        <div class="pdf-viewer-header">
+          <span class="pdf-viewer-title" id="pdf-viewer-file-name">Document Viewer</span>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="pdf-btn" id="pdf-open-browser-btn">Open in Browser</button>
+            <button class="pdf-close-btn" id="pdf-viewer-close-btn">&times;</button>
+          </div>
+        </div>
+        <div class="pdf-viewer-body">
+          <iframe id="pdf-viewer-iframe" src="" frameborder="0" allow="autoplay"></iframe>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Entry Module Script -->
     <script type="module" src="/js/app.js"></script>
   </body>

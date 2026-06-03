@@ -124,6 +124,24 @@ function bindEvents() {
     }
   });
 
+  // PDF Viewer Close
+  const pdfCloseBtn = document.getElementById('pdf-viewer-close-btn');
+  const pdfModal = document.getElementById('pdf-viewer-modal');
+  const pdfIframe = document.getElementById('pdf-viewer-iframe');
+
+  if (pdfCloseBtn && pdfModal && pdfIframe) {
+    pdfCloseBtn.addEventListener('click', () => {
+      pdfModal.style.display = 'none';
+      pdfIframe.src = '';
+    });
+    pdfModal.addEventListener('click', (e) => {
+      if (e.target === pdfModal) {
+        pdfModal.style.display = 'none';
+        pdfIframe.src = '';
+      }
+    });
+  }
+
   // Apply initial theme icon
   updateThemeIcon();
 }
@@ -230,6 +248,25 @@ async function renderView(view, data) {
 function openLightbox(url) {
   lightboxImg.src = url;
   lightbox.style.display = 'flex';
+}
+
+// Open PDF Viewer Modal
+function openPdfViewer(fileId, fileName, fileLink) {
+  const modal = document.getElementById('pdf-viewer-modal');
+  const iframe = document.getElementById('pdf-viewer-iframe');
+  const title = document.getElementById('pdf-viewer-file-name');
+  const openBrowserBtn = document.getElementById('pdf-open-browser-btn');
+
+  if (modal && iframe && title && openBrowserBtn) {
+    title.textContent = fileName;
+    iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
+    
+    openBrowserBtn.onclick = () => {
+      window.open(fileLink, '_blank');
+    };
+
+    modal.style.display = 'flex';
+  }
 }
 
 /* ==========================================================================
@@ -743,10 +780,7 @@ async function renderDriveFolderContents(container, folderId) {
         drivePathStack.push({ id: fileId, name: fileName });
         await renderDriveFolderContents(container, fileId);
       } else {
-        // Open file link in default browser
-        if (fileLink !== '#') {
-          window.open(fileLink, '_blank');
-        }
+        openPdfViewer(fileId, fileName, fileLink);
       }
     });
   });
