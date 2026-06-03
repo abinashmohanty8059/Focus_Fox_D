@@ -1,83 +1,46 @@
-// Focus Fox Supabase Client Service
+// Focus Fox Supabase Client Service (via Rust Proxy to bypass CORS/Origin blocks)
 import { store } from './store.js';
 
-let supabaseInstance = null;
+// Access tauri invoke safely
+const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => ({}) };
 
-function getSupabase() {
-  if (supabaseInstance) return supabaseInstance;
-
+async function supabaseFetch(endpoint) {
   const { SUPABASE_URL, SUPABASE_KEY } = store.env;
   if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error("Supabase credentials are not loaded yet!");
-    return null;
+    throw new Error("Supabase credentials are not loaded yet!");
   }
 
-  if (window.supabase) {
-    supabaseInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    return supabaseInstance;
-  } else {
-    console.error("Supabase CDN library is not available on window!");
-    return null;
+  try {
+    return await invoke('supabase_request', {
+      url: SUPABASE_URL,
+      key: SUPABASE_KEY,
+      endpoint: endpoint
+    });
+  } catch (err) {
+    console.error(`Supabase Proxy API Error on ${endpoint}:`, err);
+    throw new Error(err);
   }
 }
 
 export const supabaseClient = {
   async getBranches() {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client.from('branches').select('*');
-    if (error) {
-      console.error("Error fetching branches:", error);
-      throw error;
-    }
-    return data;
+    return await supabaseFetch('branches?select=*');
   },
 
   async getYears() {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client.from('years').select('*');
-    if (error) {
-      console.error("Error fetching years:", error);
-      throw error;
-    }
-    return data;
+    return await supabaseFetch('years?select=*');
   },
 
   async getSubjectsBySemester(branchId, semester) {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client
-      .from('branch_subjects')
-      .select('subjects(id, name, code, pyq_drive_link, notes_drive_link, course_outcome_link)')
-      .eq('branch_id', branchId)
-      .eq('semester', semester);
-
-    if (error) {
-      console.error("Error fetching subjects:", error);
-      throw error;
-    }
+    const data = await supabaseFetch(`branch_subjects?select=subjects(id,name,code,pyq_drive_link,notes_drive_link,course_outcome_link)&branch_id=eq.${branchId}&semester=eq.${semester}`);
     return (data || []).map(item => item.subjects).filter(Boolean);
   },
 
   async getTopics(subjectId) {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client
-      .from('topics')
-      .select('*')
-      .eq('subject_id', subjectId);
-    if (error) {
-      console.error("Error fetching topics:", error);
-      throw error;
-    }
-    return data;
+    return await supabaseFetch(`topics?select=*&subject_id=eq.${subjectId}`);
   },
 
   async getTopicsWithImportance(subjectId) {
-    const client = getSupabase();
-    if (!client) return [];
-
     // 1. Fetch topics
     const topics = await this.getTopics(subjectId);
     if (!topics || topics.length === 0) return [];
@@ -85,17 +48,8 @@ export const supabaseClient = {
     const topicIds = topics.map(t => t.id);
 
     // 2. Fetch question_topics for these topics
-    const { data: qtList, error: qtError } = await client
-      .from('question_topics')
-      .select('topic_id, question_id')
-      .in('topic_id', topicIds);
-
-    if (qtError) {
-      console.error("Error fetching question_topics:", qtError);
-      topics.forEach(t => t.importanceScore = 0);
-      return topics;
-    }
-
+    const qtList = await supabaseFetch(`question_topics?select=topic_id,question_id&topic_id=in.(${topicIds.join(',')})`);
+    
     const allQuestionIds = [...new Set(qtList.map(e => e.question_id))];
     if (allQuestionIds.length === 0) {
       topics.forEach(t => t.importanceScore = 0);
@@ -103,16 +57,7 @@ export const supabaseClient = {
     }
 
     // 3. Fetch question_pyq_map with source years for these questions
-    const { data: qpmList, error: qpmError } = await client
-      .from('question_pyq_map')
-      .select('question_id, pyq_sources(year)')
-      .in('question_id', allQuestionIds);
-
-    if (qpmError) {
-      console.error("Error fetching question_pyq_map:", qpmError);
-      topics.forEach(t => t.importanceScore = 0);
-      return topics;
-    }
+    const qpmList = await supabaseFetch(`question_pyq_map?select=question_id,pyq_sources(year)&question_id=in.(${allQuestionIds.join(',')})`);
 
     // 4. Calculate scores for each topic
     for (const topic of topics) {
@@ -149,64 +94,20 @@ export const supabaseClient = {
   },
 
   async getTopicResources(topicId) {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client
-      .from('topic_resources')
-      .select('*')
-      .eq('topic_id', topicId);
-    if (error) {
-      console.error("Error fetching topic resources:", error);
-      throw error;
-    }
-    return data;
+    return await supabaseFetch(`topic_resources?select=*&topic_id=eq.${topicId}`);
   },
 
   async getQuestionsByTopic(topicId) {
-    const client = getSupabase();
-    if (!client) return [];
-
-    const { data, error } = await client
-      .from('question_topics')
-      .select('questions(id, question_text, difficulty)')
-      .eq('topic_id', topicId);
-
-    if (error) {
-      console.error("Error fetching questions by topic:", error);
-      throw error;
-    }
-
+    const data = await supabaseFetch(`question_topics?select=questions(id,question_text,difficulty)&topic_id=eq.${topicId}`);
     return (data || []).map(item => item.questions).filter(Boolean);
   },
 
   async getPyqSourcesForQuestion(questionId) {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client
-      .from('question_pyq_map')
-      .select('pyq_sources(id, year, exam_type, season, question_number)')
-      .eq('question_id', questionId);
-
-    if (error) {
-      console.error("Error fetching pyq sources:", error);
-      throw error;
-    }
+    const data = await supabaseFetch(`question_pyq_map?select=pyq_sources(id,year,exam_type,season,question_number)&question_id=eq.${questionId}`);
     return (data || []).map(item => item.pyq_sources).filter(Boolean);
   },
 
   async getImagesForQuestion(questionId) {
-    const client = getSupabase();
-    if (!client) return [];
-    const { data, error } = await client
-      .from('images')
-      .select('*')
-      .eq('question_id', questionId)
-      .order('order_index', { ascending: true });
-
-    if (error) {
-      console.error("Error fetching images for question:", error);
-      throw error;
-    }
-    return data;
+    return await supabaseFetch(`images?select=*&question_id=eq.${questionId}&order=order_index.asc`);
   }
 };

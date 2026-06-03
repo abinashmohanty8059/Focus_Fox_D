@@ -64,11 +64,38 @@ fn load_env() -> HashMap<String, String> {
     env_vars
 }
 
+#[tauri::command]
+async fn supabase_request(url: String, key: String, endpoint: String) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::new();
+    let full_url = format!("{}/rest/v1/{}", url, endpoint);
+    
+    println!("Rust proxying Supabase request: {}", endpoint);
+
+    let res = client.get(&full_url)
+        .header("apikey", &key)
+        .header("Authorization", format!("Bearer {}", key))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+        
+    let status = res.status();
+    if !status.is_success() {
+        let err_text = res.text().await.unwrap_or_default();
+        return Err(format!("Supabase API returned code {}: {}", status, err_text));
+    }
+    
+    let json = res.json::<serde_json::Value>()
+        .await
+        .map_err(|e| e.to_string())?;
+        
+    Ok(json)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, load_env])
+        .invoke_handler(tauri::generate_handler![greet, load_env, supabase_request])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
