@@ -119,11 +119,82 @@ aside.sidebar {
 }
 
 .sidebar-brand {
-  padding: 24px;
+  padding: 24px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--border);
+  transition: padding var(--transition-normal);
+}
+
+.collapse-sidebar-btn {
+  background: none;
+  border: none;
+  color: var(--subtext);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  margin-left: auto;
+}
+
+.collapse-sidebar-btn:hover {
+  background-color: var(--surface-hover);
+  color: var(--text);
+}
+
+.collapse-sidebar-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  fill: none;
+  transition: transform var(--transition-normal);
+}
+
+/* Collapsed Sidebar Modifiers */
+aside.sidebar.collapsed {
+  width: 76px;
+}
+
+aside.sidebar.collapsed .brand-name {
+  display: none;
+}
+
+aside.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 16px 10px;
+}
+
+aside.sidebar.collapsed .collapse-sidebar-btn {
+  margin-left: 0;
+}
+
+aside.sidebar.collapsed #sidebar-toggle-icon {
+  transform: rotate(180deg);
+}
+
+aside.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+aside.sidebar.collapsed .nav-item span {
+  display: none;
+}
+
+aside.sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+  padding: 16px 10px;
+}
+
+aside.sidebar.collapsed .user-info {
+  display: none;
 }
 
 .brand-icon {
@@ -140,6 +211,7 @@ aside.sidebar {
   box-shadow: 0 4px 12px var(--primary-glow);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .brand-icon img {
@@ -355,6 +427,12 @@ header.app-header {
   flex-direction: column;
   gap: 24px;
   position: relative;
+}
+
+.view-container.no-padding {
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden !important;
 }
 
 .fade-in {

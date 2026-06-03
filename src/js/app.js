@@ -75,6 +75,23 @@ async function init() {
 
 // Bind event listeners
 function bindEvents() {
+  // Sidebar Collapse Toggle
+  const sidebar = document.getElementById('sidebar');
+  const collapseBtn = document.getElementById('collapse-sidebar-btn');
+  if (sidebar && collapseBtn) {
+    collapseBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem('focus_fox_sidebar_collapsed', isCollapsed);
+    });
+    
+    // Auto-restore collapsed state on load
+    const savedCollapsed = localStorage.getItem('focus_fox_sidebar_collapsed') === 'true';
+    if (savedCollapsed) {
+      sidebar.classList.add('collapsed');
+    }
+  }
+
   // Navigation sidebar item clicks
   navSelection.addEventListener('click', () => {
     store.navigateTo('selection');
@@ -186,6 +203,9 @@ function updateHeader(view, data) {
   } else if (view === 'question-detail') {
     headerTitleText.textContent = "Question details";
     headerSubtitleText.textContent = store.selectedTopic ? store.selectedTopic.name : "Practice Question";
+  } else if (view === 'pdf-viewer') {
+    headerTitleText.textContent = store.selectedFile ? store.selectedFile.name : "Document Viewer";
+    headerSubtitleText.textContent = "Google Drive PDF Preview";
   } else if (view === 'settings') {
     headerTitleText.textContent = "Settings";
     headerSubtitleText.textContent = "App preferences and API connection status";
@@ -204,6 +224,13 @@ function updateThemeIcon() {
 
 // Dispatch to individual view renderers
 async function renderView(view, data) {
+  // Toggle padding class for fullscreen PDF preview
+  if (view === 'pdf-viewer') {
+    viewContainer.classList.add('no-padding');
+  } else {
+    viewContainer.classList.remove('no-padding');
+  }
+
   // Show spinner initially
   viewContainer.innerHTML = `<div class="spinner"></div>`;
 
@@ -223,6 +250,9 @@ async function renderView(view, data) {
         break;
       case 'question-detail':
         await renderQuestionDetailView();
+        break;
+      case 'pdf-viewer':
+        await renderPdfView();
         break;
       case 'settings':
         await renderSettingsView();
@@ -250,23 +280,18 @@ function openLightbox(url) {
   lightbox.style.display = 'flex';
 }
 
-// Open PDF Viewer Modal
-function openPdfViewer(fileId, fileName, fileLink) {
-  const modal = document.getElementById('pdf-viewer-modal');
-  const iframe = document.getElementById('pdf-viewer-iframe');
-  const title = document.getElementById('pdf-viewer-file-name');
-  const openBrowserBtn = document.getElementById('pdf-open-browser-btn');
-
-  if (modal && iframe && title && openBrowserBtn) {
-    title.textContent = fileName;
-    iframe.src = `https://drive.google.com/file/d/${fileId}/preview`;
-    
-    openBrowserBtn.onclick = () => {
-      window.open(fileLink, '_blank');
-    };
-
-    modal.style.display = 'flex';
+// Render PDF Viewer inside main content area
+async function renderPdfView() {
+  const file = store.selectedFile;
+  if (!file) {
+    store.navigateTo('subject-dashboard');
+    return;
   }
+  viewContainer.innerHTML = `
+    <div class="pdf-iframe-container fade-in" style="width: 100%; height: 100%; background-color: #525659; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+      <iframe src="https://drive.google.com/file/d/${file.id}/preview" frameborder="0" allow="autoplay" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+    </div>
+  `;
 }
 
 /* ==========================================================================
@@ -780,7 +805,8 @@ async function renderDriveFolderContents(container, folderId) {
         drivePathStack.push({ id: fileId, name: fileName });
         await renderDriveFolderContents(container, fileId);
       } else {
-        openPdfViewer(fileId, fileName, fileLink);
+        store.selectedFile = { id: fileId, name: fileName, link: fileLink };
+        store.navigateTo('pdf-viewer');
       }
     });
   });
@@ -806,12 +832,24 @@ async function renderHandoutTab(container) {
       <p style="color: var(--subtext); margin-top: 10px; margin-bottom: 24px;">
         View the syllabus structure, subject topics weightage, and learning outcomes in your browser.
       </p>
-      <a href="${handoutLink}" target="_blank" class="submit-btn" style="text-decoration: none;">
+      <button class="submit-btn" id="open-handout-btn" style="width: 100%;">
         <span>Open Handout Document</span>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </a>
+      </button>
     </div>
   `;
+
+  document.getElementById('open-handout-btn').addEventListener('click', () => {
+    if (handoutLink.includes('drive.google.com')) {
+      const match = handoutLink.match(/\/file\/d\/([a-zA-Z0-9-_]+)/) || handoutLink.match(/id=([a-zA-Z0-9-_]+)/);
+      if (match && match[1]) {
+        store.selectedFile = { id: match[1], name: "Course Handout", link: handoutLink };
+        store.navigateTo('pdf-viewer');
+        return;
+      }
+    }
+    window.open(handoutLink, '_blank');
+  });
 }
 
 // Progress Tab rendering
