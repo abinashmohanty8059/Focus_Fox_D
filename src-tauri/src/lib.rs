@@ -91,11 +91,50 @@ async fn supabase_request(url: String, key: String, endpoint: String) -> Result<
     Ok(json)
 }
 
+#[tauri::command]
+fn list_music_files() -> Result<Vec<String>, String> {
+    let mut files = Vec::new();
+    let music_dir = std::path::PathBuf::from("music");
+    
+    // Create music directory in CWD if it doesn't exist
+    if !music_dir.exists() {
+        let _ = fs::create_dir_all(&music_dir);
+    }
+    
+    if let Ok(entries) = fs::read_dir(&music_dir) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        let ext_str = ext.to_string_lossy().to_lowercase();
+                        if ext_str == "mp3" || ext_str == "wav" || ext_str == "ogg" || ext_str == "m4a" {
+                            if let Ok(abs_path) = fs::canonicalize(&path) {
+                                if let Some(abs_str) = abs_path.to_str() {
+                                    // Strip Windows UNC prefix if present
+                                    let clean_path = if abs_str.starts_with(r"\\?\") {
+                                        abs_str[4..].to_string()
+                                    } else {
+                                        abs_str.to_string()
+                                    };
+                                    files.push(clean_path);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Ok(files)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, load_env, supabase_request])
+        .invoke_handler(tauri::generate_handler![greet, load_env, supabase_request, list_music_files])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

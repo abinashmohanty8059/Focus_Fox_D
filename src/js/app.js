@@ -13,6 +13,9 @@ const aiCache = new Map();
 // Path stack for Google Drive explorer [ { id: '...', name: '...' } ]
 let drivePathStack = [];
 
+// Current sorting mode for topics tab ('syllabus' or 'importance')
+let activeTopicSort = 'syllabus';
+
 // DOM element references
 let viewContainer;
 let headerTitleText;
@@ -63,6 +66,9 @@ async function init() {
 
   // Bind core UI event listeners
   bindEvents();
+
+  // Initialize sidebar music player
+  initMusicPlayer();
 
   // Render initial view
   if (store.selectedBranch && store.selectedSemester) {
@@ -535,117 +541,159 @@ async function renderTopicsTab(container) {
     return;
   }
 
-  // Sort topics by importance score descending (exam oriented)
-  topics.sort((a, b) => (b.importanceScore || 0) - (a.importanceScore || 0));
+  // Create copies for Syllabus Order (as fetched) and Importance Order (sorted by score descending)
+  const syllabusOrder = [...topics];
+  const importanceOrder = [...topics].sort((a, b) => (b.importanceScore || 0) - (a.importanceScore || 0));
 
-  // Determine max score to normalize
-  const maxScore = Math.max(...topics.map(t => t.importanceScore || 0), 1);
+  function renderList() {
+    const activeTopics = activeTopicSort === 'importance' ? importanceOrder : syllabusOrder;
 
-  let topicsHtml = '';
-  topics.forEach((topic) => {
-    const isCompleted = store.isTopicCompleted(topic.id);
-    const score = topic.importanceScore || 0;
-    
-    // Normalize rating to bar width
-    const percentage = Math.min(100, Math.round((score / maxScore) * 100));
-    
-    // Severity tags
-    let urgencyClass = 'low';
-    let urgencyText = 'Low Importance';
-    if (score >= 12) {
-      urgencyClass = 'high';
-      urgencyText = 'High Importance';
-    } else if (score >= 5) {
-      urgencyClass = 'medium';
-      urgencyText = 'Medium Importance';
-    }
+    let topicsHtml = '';
+    activeTopics.forEach((topic) => {
+      const isCompleted = store.isTopicCompleted(topic.id);
+      const score = topic.importanceScore || 0;
+      
+      // Calculate dynamic HSL color based on score (0 to 100)
+      // Clamped score to 0-100 range
+      const percentage = Math.min(100, Math.max(0, Math.round(score)));
+      const hue = Math.round((1 - (percentage / 100)) * 60);
+      const barColor = `hsl(${hue}, 90%, 50%)`;
+      
+      // Severity tags based on percentage
+      let urgencyText = 'Low Importance';
+      if (percentage >= 75) {
+        urgencyText = 'High Importance';
+      } else if (percentage >= 40) {
+        urgencyText = 'Medium Importance';
+      }
 
-    topicsHtml += `
-      <div class="topic-card" id="topic-${topic.id}" data-id="${topic.id}">
-        <div class="topic-header">
-          <div class="topic-header-main">
-            <div class="topic-checkbox ${isCompleted ? 'completed' : ''}" data-topic-id="${topic.id}">
-              <svg viewBox="0 0 24 24">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-            <div class="topic-title-area">
-              <span class="topic-title">${topic.name}</span>
-              <div class="importance-bar-container">
-                <span>${urgencyText} (${score.toFixed(0)} pts)</span>
-                <div class="importance-bar">
-                  <div class="importance-fill ${urgencyClass}" style="width: ${percentage}%"></div>
+      topicsHtml += `
+        <div class="topic-card" id="topic-${topic.id}" data-id="${topic.id}">
+          <div class="topic-header">
+            <div class="topic-header-main">
+              <div class="topic-checkbox ${isCompleted ? 'completed' : ''}" data-topic-id="${topic.id}">
+                <svg viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div class="topic-title-area">
+                <span class="topic-title">${topic.name}</span>
+                <div class="importance-row">
+                  <span class="importance-urgency-text">${urgencyText}</span>
+                  <div class="importance-bar">
+                    <div class="importance-fill" style="width: ${percentage}%; background-color: ${barColor};"></div>
+                  </div>
                 </div>
               </div>
             </div>
+            <div class="topic-actions">
+              <div class="importance-percentage-badge" style="color: ${barColor};">${percentage}%</div>
+              <svg class="topic-chevron" viewBox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
           </div>
-          <div class="topic-actions">
-            <svg class="topic-chevron" viewBox="0 0 24 24">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+          
+          <div class="topic-body">
+            <div class="topic-content-wrapper">
+              <div class="topic-summary">
+                ${topic.summary || '<em>No summary notes configured for this topic. Click practice questions to learn step-by-step.</em>'}
+              </div>
+              
+              <div class="topic-resources-section" id="resources-${topic.id}">
+                <div class="spinner" style="margin: 10px auto;"></div>
+              </div>
+
+              <button class="topic-start-btn" data-topic-id="${topic.id}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                <span>Practice Topic Questions</span>
+              </button>
+            </div>
           </div>
         </div>
-        
-        <div class="topic-body">
-          <div class="topic-content-wrapper">
-            <div class="topic-summary">
-              ${topic.summary || '<em>No summary notes configured for this topic. Click practice questions to learn step-by-step.</em>'}
-            </div>
-            
-            <div class="topic-resources-section" id="resources-${topic.id}">
-              <div class="spinner" style="margin: 10px auto;"></div>
-            </div>
+      `;
+    });
 
-            <button class="topic-start-btn" data-topic-id="${topic.id}">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-              <span>Practice Topic Questions</span>
-            </button>
-          </div>
+    const controlsHtml = `
+      <div class="topics-controls">
+        <div class="sort-label">Sort Topics:</div>
+        <div class="sort-group">
+          <button class="sort-btn ${activeTopicSort === 'syllabus' ? 'active' : ''}" id="btn-sort-syllabus">
+            Syllabus Order
+          </button>
+          <button class="sort-btn ${activeTopicSort === 'importance' ? 'active' : ''}" id="btn-sort-importance">
+            Importance Order
+          </button>
         </div>
       </div>
     `;
-  });
 
-  container.innerHTML = `<div class="topics-list">${topicsHtml}</div>`;
+    container.innerHTML = `
+      ${controlsHtml}
+      <div class="topics-list">${topicsHtml}</div>
+    `;
 
-  // Bind accordion click handlers
-  document.querySelectorAll('.topic-header').forEach(header => {
-    // Exclude checkbox from card header toggle
-    header.addEventListener('click', (e) => {
-      if (e.target.closest('.topic-checkbox')) return;
-      
-      const card = header.closest('.topic-card');
-      const isOpen = card.classList.contains('open');
-      
-      // Close others
-      document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('open'));
-      
-      if (!isOpen) {
-        card.classList.add('open');
-        const topicId = card.getAttribute('data-id');
-        loadTopicResources(topicId);
-      }
+    // Bind accordion click handlers
+    container.querySelectorAll('.topic-header').forEach(header => {
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('.topic-checkbox')) return;
+        
+        const card = header.closest('.topic-card');
+        const isOpen = card.classList.contains('open');
+        
+        // Close others
+        container.querySelectorAll('.topic-card').forEach(c => c.classList.remove('open'));
+        
+        if (!isOpen) {
+          card.classList.add('open');
+          const topicId = card.getAttribute('data-id');
+          loadTopicResources(topicId);
+        }
+      });
     });
-  });
 
-  // Bind checkbox toggle click handlers
-  document.querySelectorAll('.topic-checkbox').forEach(box => {
-    box.addEventListener('click', () => {
-      const topicId = box.getAttribute('data-topic-id');
-      store.toggleTopicCompletion(topicId);
-      box.classList.toggle('completed');
+    // Bind checkbox toggle click handlers
+    container.querySelectorAll('.topic-checkbox').forEach(box => {
+      box.addEventListener('click', () => {
+        const topicId = box.getAttribute('data-topic-id');
+        store.toggleTopicCompletion(topicId);
+        box.classList.toggle('completed');
+      });
     });
-  });
 
-  // Practice Topic button click handlers
-  document.querySelectorAll('.topic-start-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const topicId = btn.getAttribute('data-topic-id');
-      const topic = topics.find(t => t.id === topicId);
-      store.selectedTopic = topic;
-      store.navigateTo('question-list');
+    // Practice Topic button click handlers
+    container.querySelectorAll('.topic-start-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const topicId = btn.getAttribute('data-topic-id');
+        const topic = topics.find(t => t.id === topicId);
+        store.selectedTopic = topic;
+        store.navigateTo('question-list');
+      });
     });
-  });
+
+    // Bind sort controls click handlers
+    const btnSyllabus = container.querySelector('#btn-sort-syllabus');
+    const btnImportance = container.querySelector('#btn-sort-importance');
+
+    if (btnSyllabus && btnImportance) {
+      btnSyllabus.addEventListener('click', () => {
+        if (activeTopicSort !== 'syllabus') {
+          activeTopicSort = 'syllabus';
+          renderList();
+        }
+      });
+
+      btnImportance.addEventListener('click', () => {
+        if (activeTopicSort !== 'importance') {
+          activeTopicSort = 'importance';
+          renderList();
+        }
+      });
+    }
+  }
+
+  // Initial render of the topics list
+  renderList();
 }
 
 // Load resources for accordion dynamically
@@ -1352,6 +1400,158 @@ async function renderSettingsView() {
     navDashboard.style.display = 'none';
     store.navigateTo('selection');
   });
+}
+
+// Mini Music Player Logic
+async function initMusicPlayer() {
+  const audio = new Audio();
+  let playlist = [];
+  let currentTrackIndex = 0;
+  let isPlaying = false;
+
+  const playBtn = document.getElementById('player-play-btn');
+  const prevBtn = document.getElementById('player-prev-btn');
+  const nextBtn = document.getElementById('player-next-btn');
+  const progressBar = document.getElementById('player-progress-bar');
+  const progressFill = document.getElementById('player-progress-fill');
+  const timeText = document.getElementById('player-time');
+
+  // Fallback playlist with high quality lofi ambient URLs
+  const fallbackPlaylist = [
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+  ];
+
+  // Load songs from the 'music' folder via Rust backend
+  try {
+    const files = await invoke('list_music_files');
+    if (files && files.length > 0) {
+      console.log(`Loaded ${files.length} songs from the music folder.`);
+      playlist = files;
+    } else {
+      console.log("Music folder is empty. Using default ambient fallback songs.");
+      playlist = fallbackPlaylist;
+    }
+  } catch (err) {
+    console.error("Failed to load music files, using fallbacks:", err);
+    playlist = fallbackPlaylist;
+  }
+
+  // Load track helper
+  function loadTrack(index) {
+    if (playlist.length === 0) return;
+    
+    currentTrackIndex = index;
+    const trackPath = playlist[currentTrackIndex];
+    
+    // Convert local system file path to WebView loadable URL if it's not a remote URL
+    let src = trackPath;
+    if (window.__TAURI__ && !trackPath.startsWith('http')) {
+      src = window.__TAURI__.core.convertFileSrc(trackPath);
+    }
+    
+    audio.src = src;
+    audio.load();
+    progressFill.style.width = '0%';
+    timeText.textContent = `0:00 / 0:00`;
+  }
+
+  // Play/Pause helper
+  function togglePlay() {
+    if (playlist.length === 0) return;
+    
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(err => console.error("Audio playback error:", err));
+    }
+  }
+
+  // Update play button icon
+  function updatePlayButtonUI() {
+    if (!playBtn) return;
+    if (isPlaying) {
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24" id="play-icon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+      playBtn.title = "Pause";
+    } else {
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24" id="play-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+      playBtn.title = "Play";
+    }
+  }
+
+  // Format seconds to M:SS
+  function formatTime(secs) {
+    if (isNaN(secs)) return '0:00';
+    const minutes = Math.floor(secs / 60);
+    const seconds = Math.floor(secs % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }
+
+  // Next Track
+  function nextTrack() {
+    let nextIndex = (currentTrackIndex + 1) % playlist.length;
+    loadTrack(nextIndex);
+    if (isPlaying) {
+      audio.play().catch(e => console.error(e));
+    }
+  }
+
+  // Previous Track
+  function prevTrack() {
+    let prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+    loadTrack(prevIndex);
+    if (isPlaying) {
+      audio.play().catch(e => console.error(e));
+    }
+  }
+
+  // Bind controls
+  if (playBtn) playBtn.addEventListener('click', togglePlay);
+  if (prevBtn) prevBtn.addEventListener('click', prevTrack);
+  if (nextBtn) nextBtn.addEventListener('click', nextTrack);
+
+  // Audio Event Listeners
+  audio.addEventListener('play', () => {
+    isPlaying = true;
+    updatePlayButtonUI();
+  });
+
+  audio.addEventListener('pause', () => {
+    isPlaying = false;
+    updatePlayButtonUI();
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      progressFill.style.width = `${pct}%`;
+      timeText.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+    }
+  });
+
+  audio.addEventListener('loadedmetadata', () => {
+    timeText.textContent = `0:00 / ${formatTime(audio.duration)}`;
+  });
+
+  audio.addEventListener('ended', () => {
+    nextTrack();
+  });
+
+  // Click on progress bar to seek
+  if (progressBar) {
+    progressBar.addEventListener('click', (e) => {
+      if (!audio.duration || playlist.length === 0) return;
+      const rect = progressBar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const width = rect.width;
+      const percentage = Math.max(0, Math.min(1, clickX / width));
+      audio.currentTime = percentage * audio.duration;
+    });
+  }
+
+  // Initial load
+  loadTrack(0);
 }
 
 // Start the Application
