@@ -94,11 +94,13 @@ async fn supabase_request(url: String, key: String, endpoint: String) -> Result<
 #[tauri::command]
 fn list_music_files() -> Result<Vec<String>, String> {
     let mut files = Vec::new();
-    let music_dir = std::path::PathBuf::from("music");
-    
-    // Create music directory in CWD if it doesn't exist
+    // Prioritize project root "music" directory (../music relative to src-tauri)
+    let mut music_dir = std::path::PathBuf::from("../music");
     if !music_dir.exists() {
-        let _ = fs::create_dir_all(&music_dir);
+        music_dir = std::path::PathBuf::from("music");
+        if !music_dir.exists() {
+            let _ = fs::create_dir_all(&music_dir);
+        }
     }
     
     if let Ok(entries) = fs::read_dir(&music_dir) {

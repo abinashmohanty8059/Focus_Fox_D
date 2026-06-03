@@ -67,6 +67,9 @@ async function init() {
   // Bind core UI event listeners
   bindEvents();
 
+  // Initialize sidebar stopwatch
+  initStopwatch();
+
   // Initialize sidebar music player
   initMusicPlayer();
 
@@ -1415,6 +1418,7 @@ async function initMusicPlayer() {
   const progressBar = document.getElementById('player-progress-bar');
   const progressFill = document.getElementById('player-progress-fill');
   const timeText = document.getElementById('player-time');
+  const volumeSlider = document.getElementById('player-volume-slider');
 
   // Fallback playlist with high quality lofi ambient URLs
   const fallbackPlaylist = [
@@ -1550,8 +1554,79 @@ async function initMusicPlayer() {
     });
   }
 
+  // Volume slider control
+  if (volumeSlider) {
+    volumeSlider.addEventListener('input', () => {
+      audio.volume = volumeSlider.value;
+    });
+    audio.volume = volumeSlider.value;
+  }
+
   // Initial load
   loadTrack(0);
+}
+
+// Mini Stopwatch Logic
+function initStopwatch() {
+  let stopwatchInterval = null;
+  let stopwatchSeconds = 0;
+  let isStopwatchRunning = false;
+
+  const display = document.getElementById('stopwatch-display');
+  const playBtn = document.getElementById('stopwatch-play-btn');
+  const resetBtn = document.getElementById('stopwatch-reset-btn');
+
+  function updateStopwatchUI() {
+    if (!display) return;
+    const hrs = Math.floor(stopwatchSeconds / 3600);
+    const mins = Math.floor((stopwatchSeconds % 3600) / 60);
+    const secs = stopwatchSeconds % 60;
+    
+    const displayMins = mins < 10 ? `0${mins}` : mins;
+    const displaySecs = secs < 10 ? `0${secs}` : secs;
+    
+    display.textContent = hrs > 0 ? `${hrs}:${displayMins}:${displaySecs}` : `${displayMins}:${displaySecs}`;
+  }
+
+  function toggleStopwatch() {
+    if (isStopwatchRunning) {
+      // Pause
+      clearInterval(stopwatchInterval);
+      isStopwatchRunning = false;
+      if (playBtn) {
+        playBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+        playBtn.title = "Start Stopwatch";
+      }
+    } else {
+      // Start
+      stopwatchInterval = setInterval(() => {
+        stopwatchSeconds++;
+        updateStopwatchUI();
+      }, 1000);
+      isStopwatchRunning = true;
+      if (playBtn) {
+        playBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+        playBtn.title = "Pause Stopwatch";
+      }
+    }
+  }
+
+  function resetStopwatch() {
+    clearInterval(stopwatchInterval);
+    isStopwatchRunning = false;
+    stopwatchSeconds = 0;
+    updateStopwatchUI();
+    if (playBtn) {
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+      playBtn.title = "Start Stopwatch";
+    }
+  }
+
+  if (playBtn) playBtn.addEventListener('click', toggleStopwatch);
+  if (resetBtn) resetBtn.addEventListener('click', resetStopwatch);
+
+  // Initialize display
+  updateStopwatchUI();
 }
 
 // Start the Application
