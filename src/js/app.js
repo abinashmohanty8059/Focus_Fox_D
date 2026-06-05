@@ -1540,16 +1540,16 @@ async function renderAlgoSolutionView() {
 
   const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
 
-  // Render main layout skeleton
+  // Render main layout skeleton (compact single-row header card)
   viewContainer.innerHTML = `
     <div class="algo-solution-layout fade-in">
-      <div class="algo-solution-question-card">
-        <div class="algo-sol-meta">
-          <span class="algo-diff-badge ${diffClass}">${q.difficulty}</span>
-          <span class="algo-sol-topic">${q.parent_topic}</span>
+      <div class="algo-solution-question-card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 14px 24px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <h2 class="algo-sol-title" style="margin: 0; font-size: 1.25rem;">${q.question_name}</h2>
+          <span class="algo-diff-badge ${diffClass}" style="padding: 2px 10px; font-size: 0.72rem;">${q.difficulty}</span>
+          <span class="algo-sol-topic" style="padding: 2px 10px; font-size: 0.72rem;">${q.parent_topic}</span>
         </div>
-        <h2 class="algo-sol-title">${q.question_name}</h2>
-        ${q.question_link ? `<a href="${q.question_link}" class="algo-sol-link" id="algo-sol-open-link">View on LeetCode →</a>` : '<span class="algo-sol-link" style="opacity:0.4;">No link added yet</span>'}
+        ${q.question_link ? `<a href="${q.question_link}" class="algo-sol-link" id="algo-sol-open-link" style="font-size: 0.85rem; margin: 0;">View on LeetCode →</a>` : '<span class="algo-sol-link" style="opacity:0.4; font-size: 0.85rem; margin: 0;">No link added yet</span>'}
       </div>
 
       <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
@@ -1584,8 +1584,15 @@ async function renderAlgoSolutionView() {
     const dbSolutions = await supabaseClient.getLeetcodeSolutions(q.id);
 
     if (dbSolutions && dbSolutions.length > 0) {
-      // We have custom solutions! Group by language
-      const languages = [...new Set(dbSolutions.map(s => s.language))];
+      // We have custom solutions! Group by language (C++ first, then Java, then C)
+      const langOrder = ['C++', 'Java', 'C'];
+      const languages = [...new Set(dbSolutions.map(s => s.language))].sort((a, b) => {
+        let idxA = langOrder.indexOf(a);
+        let idxB = langOrder.indexOf(b);
+        if (idxA === -1) idxA = 99;
+        if (idxB === -1) idxB = 99;
+        return idxA - idxB;
+      });
       let activeLang = languages[0];
       let activeSubIndex = 0;
       let hideComments = false;
@@ -1608,6 +1615,10 @@ async function renderAlgoSolutionView() {
               <button class="custom-sol-theme-btn theme-btn-one-dark active" data-theme="one-dark" title="One Dark"></button>
               <button class="custom-sol-theme-btn theme-btn-monokai" data-theme="monokai" title="Monokai"></button>
               <button class="custom-sol-theme-btn theme-btn-dracula" data-theme="dracula" title="Dracula"></button>
+              <button class="custom-sol-theme-btn theme-btn-nord" data-theme="nord" title="Nord"></button>
+              <button class="custom-sol-theme-btn theme-btn-cyberpunk" data-theme="cyberpunk" title="Cyberpunk"></button>
+              <button class="custom-sol-theme-btn theme-btn-solarized-dark" data-theme="solarized-dark" title="Solarized Dark"></button>
+              <button class="custom-sol-theme-btn theme-btn-winter-blue" data-theme="winter-blue" title="Winter Blue"></button>
               <button class="custom-sol-theme-btn theme-btn-github-light" data-theme="github-light" title="GitHub Light"></button>
             </div>
 

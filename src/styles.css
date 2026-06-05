@@ -2744,6 +2744,61 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   color: var(--primary);
 }
 
+/* Nord Theme */
+.custom-sol-code-wrapper[data-code-theme="nord"] {
+  background: #2e3440;
+  border-color: #3b4252;
+}
+.custom-sol-code-wrapper[data-code-theme="nord"] code {
+  color: #d8dee9;
+}
+.custom-sol-code-wrapper[data-code-theme="nord"] .code-comment { color: #4c566a; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="nord"] .code-string { color: #a3be8c; }
+.custom-sol-code-wrapper[data-code-theme="nord"] .code-keyword { color: #81a1c1; font-weight: 600; }
+
+/* Cyberpunk (Aura) Theme */
+.custom-sol-code-wrapper[data-code-theme="cyberpunk"] {
+  background: #150f22;
+  border-color: #261b3e;
+}
+.custom-sol-code-wrapper[data-code-theme="cyberpunk"] code {
+  color: #edecee;
+}
+.custom-sol-code-wrapper[data-code-theme="cyberpunk"] .code-comment { color: #6d6d6d; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="cyberpunk"] .code-string { color: #61ffca; }
+.custom-sol-code-wrapper[data-code-theme="cyberpunk"] .code-keyword { color: #ff79c6; font-weight: 600; }
+
+/* Solarized Dark Theme */
+.custom-sol-code-wrapper[data-code-theme="solarized-dark"] {
+  background: #002b36;
+  border-color: #073642;
+}
+.custom-sol-code-wrapper[data-code-theme="solarized-dark"] code {
+  color: #839496;
+}
+.custom-sol-code-wrapper[data-code-theme="solarized-dark"] .code-comment { color: #586e75; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="solarized-dark"] .code-string { color: #2aa198; }
+.custom-sol-code-wrapper[data-code-theme="solarized-dark"] .code-keyword { color: #859900; font-weight: 600; }
+
+/* Winter Blue Theme */
+.custom-sol-code-wrapper[data-code-theme="winter-blue"] {
+  background: #011627;
+  border-color: #0b253a;
+}
+.custom-sol-code-wrapper[data-code-theme="winter-blue"] code {
+  color: #d6deeb;
+}
+.custom-sol-code-wrapper[data-code-theme="winter-blue"] .code-comment { color: #637777; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="winter-blue"] .code-string { color: #ecc48d; }
+.custom-sol-code-wrapper[data-code-theme="winter-blue"] .code-keyword { color: #7fdbca; font-weight: 600; }
+
+/* Theme Selector Colors */
+.theme-btn-nord { background: #2e3440; }
+.theme-btn-cyberpunk { background: #150f22; border: 1px solid #ff79c6; }
+.theme-btn-solarized-dark { background: #002b36; }
+.theme-btn-winter-blue { background: #011627; }
+
+
 
 
 
