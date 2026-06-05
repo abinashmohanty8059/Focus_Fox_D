@@ -109,5 +109,25 @@ export const supabaseClient = {
 
   async getImagesForQuestion(questionId) {
     return await supabaseFetch(`images?select=*&question_id=eq.${questionId}&order=order_index.asc`);
+  },
+
+  // Algo & Code — fetch distinct parent_topic values from leetcode table
+  async getLeetcodeTopics() {
+    const data = await supabaseFetch('leetcode?select=parent_topic&order=priority_order.asc');
+    // Deduplicate parent topics while preserving order
+    const seen = new Set();
+    const unique = [];
+    for (const row of (data || [])) {
+      if (!seen.has(row.parent_topic)) {
+        seen.add(row.parent_topic);
+        unique.push(row.parent_topic);
+      }
+    }
+    return unique;
+  },
+
+  // Algo & Code — fetch all questions for a given parent_topic ordered by priority_order
+  async getLeetcodeByTopic(topic) {
+    return await supabaseFetch(`leetcode?select=*&parent_topic=eq.${encodeURIComponent(topic)}&order=priority_order.asc`);
   }
 };

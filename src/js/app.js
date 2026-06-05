@@ -25,6 +25,7 @@ let themeToggleBtn;
 let navSelection;
 let navDashboard;
 let navSettings;
+let navAlgo;
 let lightbox;
 let lightboxImg;
 let lightboxCloseBtn;
@@ -42,6 +43,7 @@ async function init() {
   navSelection = document.getElementById('nav-selection');
   navDashboard = document.getElementById('nav-dashboard');
   navSettings = document.getElementById('nav-settings');
+  navAlgo = document.getElementById('nav-algo');
   lightbox = document.getElementById('lightbox');
   lightboxImg = document.getElementById('lightbox-img');
   lightboxCloseBtn = document.getElementById('lightbox-close-btn');
@@ -120,6 +122,10 @@ function bindEvents() {
     store.navigateTo('settings');
   });
 
+  navAlgo.addEventListener('click', () => {
+    store.navigateTo('algo-topics');
+  });
+
   // Header Back Button
   headerBackBtn.addEventListener('click', () => {
     store.goBack();
@@ -177,6 +183,7 @@ function updateSidebarActiveState(view) {
   navSelection.classList.remove('active');
   navDashboard.classList.remove('active');
   navSettings.classList.remove('active');
+  if (navAlgo) navAlgo.classList.remove('active');
 
   if (view === 'selection') {
     navSelection.classList.add('active');
@@ -184,6 +191,8 @@ function updateSidebarActiveState(view) {
     navDashboard.classList.add('active');
   } else if (view === 'settings') {
     navSettings.classList.add('active');
+  } else if (view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution') {
+    if (navAlgo) navAlgo.classList.add('active');
   }
 }
 
@@ -218,6 +227,15 @@ function updateHeader(view, data) {
   } else if (view === 'settings') {
     headerTitleText.textContent = "Settings";
     headerSubtitleText.textContent = "App preferences and API connection status";
+  } else if (view === 'algo-topics') {
+    headerTitleText.textContent = "Algo & Code";
+    headerSubtitleText.textContent = "LeetCode practice organized by topic";
+  } else if (view === 'algo-questions') {
+    headerTitleText.textContent = store.algoSelectedTopic || "Questions";
+    headerSubtitleText.textContent = "Sorted by difficulty — Easy · Medium · Hard";
+  } else if (view === 'algo-solution') {
+    headerTitleText.textContent = store.algoSelectedQuestion ? store.algoSelectedQuestion.question_name : "Solution";
+    headerSubtitleText.textContent = "AI-powered solution walkthrough";
   }
 }
 
@@ -265,6 +283,15 @@ async function renderView(view, data) {
         break;
       case 'settings':
         await renderSettingsView();
+        break;
+      case 'algo-topics':
+        await renderAlgoTopicsView();
+        break;
+      case 'algo-questions':
+        await renderAlgoQuestionsView();
+        break;
+      case 'algo-solution':
+        await renderAlgoSolutionView();
         break;
       default:
         viewContainer.innerHTML = `<div>View "${view}" not found.</div>`;
@@ -1298,7 +1325,289 @@ async function renderQuestionDetailView() {
   }
 }
 
-// 6. Settings View
+/* ==========================================================================
+   ALGO & CODE VIEWS
+   ========================================================================== */
+
+// 6a. Algo Topics (Parent Topic blocks)
+async function renderAlgoTopicsView() {
+  const topics = await supabaseClient.getLeetcodeTopics();
+
+  if (topics.length === 0) {
+    viewContainer.innerHTML = `
+      <div class="selection-card fade-in" style="text-align:center; max-width:600px;">
+        <div style="color:var(--primary); margin-bottom:16px;">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <h3>No Topics Yet</h3>
+        <p style="color:var(--subtext);margin-top:12px;">No LeetCode questions have been added to the database yet. Add some from Supabase to get started!</p>
+      </div>
+    `;
+    return;
+  }
+
+  // SVG icon map for well-known topics
+  const topicIcons = {
+    'Array':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="17" y1="5" x2="17" y2="19"/></svg>`,
+    'String':             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h6"/></svg>`,
+    'Linked List':        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+    'Tree':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M5 8h14M8 8v2a4 4 0 0 0 8 0V8"/><circle cx="5" cy="17" r="3"/><circle cx="12" cy="17" r="3"/><circle cx="19" cy="17" r="3"/></svg>`,
+    'Graph':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><line x1="7" y1="5" x2="17" y2="5"/><line x1="5.7" y1="7" x2="11" y2="17"/><line x1="18.3" y1="7" x2="13" y2="17"/></svg>`,
+    'Dynamic Programming':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>`,
+    'Recursion':          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>`,
+    'Searching':          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    'Sorting':            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/></svg>`,
+    'Stack':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+    'Queue':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+    'Hash Map':           `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
+    'Binary Search':      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+    'Two Pointers':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`,
+    'Sliding Window':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="10" height="10" rx="1"/><line x1="16" y1="7" x2="22" y2="7"/><line x1="16" y1="12" x2="22" y2="12"/><line x1="16" y1="17" x2="22" y2="17"/></svg>`,
+    'Backtracking':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>`,
+    'Greedy':             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+    'Heap':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19h20L12 2z"/><line x1="12" y1="8" x2="12" y2="14"/></svg>`,
+    'Trie':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="4" r="2"/><circle cx="5" cy="14" r="2"/><circle cx="12" cy="14" r="2"/><circle cx="19" cy="14" r="2"/><line x1="12" y1="6" x2="5" y2="12"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="6" x2="19" y2="12"/></svg>`,
+    'Math':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+  };
+  const defaultIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
+
+  const cardsHtml = topics.map((topic) => {
+    const icon = topicIcons[topic] || defaultIcon;
+    return `
+      <div class="algo-topic-card fade-in" data-topic="${topic}">
+        <div class="algo-topic-icon">${icon}</div>
+        <div class="algo-topic-name">${topic}</div>
+        <div class="algo-topic-arrow">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  viewContainer.innerHTML = `
+    <div class="algo-topics-header fade-in">
+      <h2>Choose a Topic</h2>
+      <p>Select a data structure or algorithm to practice LeetCode questions</p>
+    </div>
+    <div class="algo-topics-grid">${cardsHtml}</div>
+  `;
+
+  document.querySelectorAll('.algo-topic-card').forEach(card => {
+    card.addEventListener('click', () => {
+      store.algoSelectedTopic = card.getAttribute('data-topic');
+      store.navigateTo('algo-questions');
+    });
+  });
+}
+
+// 6b. Algo Questions View (3-column Easy | Medium | Hard)
+async function renderAlgoQuestionsView() {
+  const topic = store.algoSelectedTopic;
+  if (!topic) { store.navigateTo('algo-topics'); return; }
+
+  const questions = await supabaseClient.getLeetcodeByTopic(topic);
+
+  // Case-insensitive filter — Supabase stores 'Easy'/'Medium'/'Hard'
+  const easy   = questions.filter(q => q.difficulty?.toLowerCase() === 'easy');
+  const medium = questions.filter(q => q.difficulty?.toLowerCase() === 'medium');
+  const hard   = questions.filter(q => q.difficulty?.toLowerCase() === 'hard');
+
+  function renderCol(qs, label, cls) {
+    if (qs.length === 0) {
+      return `<div class="algo-col-empty"><span class="algo-diff-badge ${cls}">${label}</span><p>No ${label} questions yet</p></div>`;
+    }
+    const rows = qs.map((q, i) => `
+      <div class="algo-question-row" data-id="${q.id}">
+        <span class="algo-q-num">${i + 1}</span>
+        <span class="algo-q-name">${q.question_name}</span>
+        <svg class="algo-q-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+    `).join('');
+    return `
+      <div class="algo-diff-header">
+        <span class="algo-diff-badge ${cls}">${label}</span>
+        <span class="algo-diff-count">${qs.length} question${qs.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="algo-question-list">${rows}</div>
+    `;
+  }
+
+  viewContainer.innerHTML = `
+    <div class="algo-questions-layout fade-in">
+      <div class="algo-col algo-col-easy">${renderCol(easy, 'Easy', 'badge-easy')}</div>
+      <div class="algo-col algo-col-medium">${renderCol(medium, 'Medium', 'badge-medium')}</div>
+      <div class="algo-col algo-col-hard">${renderCol(hard, 'Hard', 'badge-hard')}</div>
+    </div>
+  `;
+
+  // Attach click — show popup
+  document.querySelectorAll('.algo-question-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const qId = row.getAttribute('data-id');
+      const q = questions.find(x => x.id === qId);
+      showAlgoQuestionPopup(q);
+    });
+  });
+}
+
+// Popup for question action choice
+function showAlgoQuestionPopup(q) {
+  // Remove any existing popup
+  document.getElementById('algo-popup-overlay')?.remove();
+
+  const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+  const hasLink = q.question_link && q.question_link.trim() !== '';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'algo-popup-overlay';
+  overlay.className = 'algo-popup-overlay';
+  overlay.innerHTML = `
+    <div class="algo-popup" id="algo-popup-box">
+      <button class="algo-popup-close" id="algo-popup-close">&times;</button>
+      <div class="algo-popup-badge-row">
+        <span class="algo-diff-badge ${diffClass}">${q.difficulty}</span>
+        <span class="algo-popup-topic">${q.parent_topic}</span>
+      </div>
+      <h2 class="algo-popup-title">${q.question_name}</h2>
+      <p class="algo-popup-subtitle">Priority #${q.priority_order} &mdash; What would you like to do?</p>
+      <div class="algo-popup-actions">
+        <button class="algo-popup-btn algo-btn-question" id="algo-btn-view-q" ${!hasLink ? 'disabled title="No link added yet"' : ''}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          <span>View Question</span>
+        </button>
+        <button class="algo-popup-btn algo-btn-solution" id="algo-btn-view-sol">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="12 2 2 22 22 22 12 2"/>
+          </svg>
+          <span>View Solution</span>
+        </button>
+      </div>
+      ${!hasLink ? '<p class="algo-popup-no-link">⚠️ No LeetCode link added yet — add it from Supabase first.</p>' : ''}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Close on backdrop click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  document.getElementById('algo-popup-close').addEventListener('click', () => overlay.remove());
+
+  // View Question — open LeetCode link
+  document.getElementById('algo-btn-view-q').addEventListener('click', () => {
+    if (hasLink) {
+      // Open in default browser via Tauri shell or window.open
+      if (window.__TAURI__?.shell) {
+        window.__TAURI__.shell.open(q.question_link);
+      } else {
+        window.open(q.question_link, '_blank');
+      }
+    }
+  });
+
+  // View Solution — navigate to solution view
+  document.getElementById('algo-btn-view-sol').addEventListener('click', () => {
+    store.algoSelectedQuestion = q;
+    overlay.remove();
+    store.navigateTo('algo-solution');
+  });
+}
+
+// 6c. Algo Solution View (AI-powered solution via Gemini)
+async function renderAlgoSolutionView() {
+  const q = store.algoSelectedQuestion;
+  if (!q) { store.navigateTo('algo-questions'); return; }
+
+  const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+
+  viewContainer.innerHTML = `
+    <div class="algo-solution-layout fade-in">
+      <div class="algo-solution-question-card">
+        <div class="algo-sol-meta">
+          <span class="algo-diff-badge ${diffClass}">${q.difficulty}</span>
+          <span class="algo-sol-topic">${q.parent_topic}</span>
+        </div>
+        <h2 class="algo-sol-title">${q.question_name}</h2>
+        ${q.question_link ? `<a href="${q.question_link}" class="algo-sol-link" id="algo-sol-open-link">View on LeetCode →</a>` : '<span class="algo-sol-link" style="opacity:0.4;">No link added yet</span>'}
+      </div>
+
+      <div class="ai-solver-panel fade-in" style="flex:1;">
+        <div class="ai-blueprint-bg"></div>
+        <div class="ai-solver-header">
+          <div class="ai-solver-header-title"><span>🦊 AI Solution</span></div>
+          <button class="ai-solve-btn" id="algo-solve-trigger">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 22 22 22 12 2"/></svg>
+            <span>Generate Solution</span>
+          </button>
+        </div>
+        <div class="ai-solver-body" id="algo-ai-response">
+          <div class="ai-solver-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <p>Click <strong>Generate Solution</strong> to get a step-by-step AI walkthrough for this LeetCode problem.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Open LeetCode link via Tauri shell
+  const openLinkBtn = document.getElementById('algo-sol-open-link');
+  if (openLinkBtn && q.question_link) {
+    openLinkBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.__TAURI__?.shell) {
+        window.__TAURI__.shell.open(q.question_link);
+      } else {
+        window.open(q.question_link, '_blank');
+      }
+    });
+  }
+
+  const trigger = document.getElementById('algo-solve-trigger');
+  const responseArea = document.getElementById('algo-ai-response');
+
+  trigger.addEventListener('click', async () => {
+    trigger.disabled = true;
+    responseArea.innerHTML = `
+      <div class="ai-solver-loading">
+        <div class="spinner"></div>
+        <p style="color:var(--primary);font-weight:600;text-align:center;">Generating solution for "${q.question_name}"...<br/><span style="font-weight:400;font-size:0.85rem;color:var(--subtext);">Analyzing time complexity, approach &amp; code</span></p>
+      </div>
+    `;
+    try {
+      const cacheKey = 'algo_' + q.id;
+      let solution;
+      if (aiCache.has(cacheKey)) {
+        solution = aiCache.get(cacheKey);
+      } else {
+        solution = await aiService.solveQuestion(`LeetCode Problem: ${q.question_name}\n\nProvide a detailed solution including:\n1. Problem understanding\n2. Optimal approach/algorithm\n3. Step-by-step explanation\n4. Code solution (preferably Python and/or JavaScript)\n5. Time and space complexity analysis`);
+        aiCache.set(cacheKey, solution);
+      }
+      const htmlContent = window.marked.parse(solution);
+      responseArea.innerHTML = `<div class="ai-solver-content">${htmlContent}</div>`;
+    } catch (err) {
+      responseArea.innerHTML = `
+        <div class="drive-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          <p>Could not generate solution. Check your Gemini API key in Settings.</p>
+          <p style="font-size:0.8rem;color:var(--accent);margin-top:8px;">${err.message || ''}</p>
+        </div>
+      `;
+    } finally {
+      trigger.disabled = false;
+    }
+  });
+}
+
+// 7. Settings View
 async function renderSettingsView() {
   const isSupabaseConfigured = store.env.SUPABASE_URL && store.env.SUPABASE_KEY;
   const isGeminiConfigured = !!store.env.GEMINI_API_KEY;
