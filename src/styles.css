@@ -2715,5 +2715,35 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 .theme-btn-dracula { background: #282a36; }
 .theme-btn-github-light { background: #ffffff; border: 1px solid #c8c8c8; }
 
+/* Sub-tabs for Alternative Solutions */
+.custom-sol-sub-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-sol-sub-tab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--subtext);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.custom-sol-sub-tab:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.custom-sol-sub-tab.active {
+  background: rgba(var(--primary-rgb), 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+
 
 

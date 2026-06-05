@@ -133,7 +133,7 @@ export const supabaseClient = {
 
   // Algo & Code — fetch all solutions for a given question ID
   async getLeetcodeSolutions(questionId) {
-    return await supabaseFetch(`leet_solution?select=*&question_id=eq.${questionId}&order=created_at.asc`);
+    return await supabaseFetch(`leet_solution?select=*&question_id=eq.${questionId}&order=priority_order.asc`);
   }
 };
 

@@ -1584,8 +1584,10 @@ async function renderAlgoSolutionView() {
     const dbSolutions = await supabaseClient.getLeetcodeSolutions(q.id);
 
     if (dbSolutions && dbSolutions.length > 0) {
-      // We have custom solutions! Render them
-      let activeIndex = 0;
+      // We have custom solutions! Group by language
+      const languages = [...new Set(dbSolutions.map(s => s.language))];
+      let activeLang = languages[0];
+      let activeSubIndex = 0;
       let hideComments = false;
       let selectedTheme = 'one-dark';
 
@@ -1593,10 +1595,10 @@ async function renderAlgoSolutionView() {
       contentArea.innerHTML = `
         <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1;">
           <div class="custom-sol-header-bar">
-            <div class="custom-sol-tabs">
-              ${dbSolutions.map((sol, index) => `
-                <button class="custom-sol-tab" data-index="${index}">
-                  ${sol.language}
+            <div class="custom-sol-tabs" id="custom-sol-lang-tabs">
+              ${languages.map(lang => `
+                <button class="custom-sol-tab ${lang === activeLang ? 'active' : ''}" data-lang="${lang}">
+                  ${lang}
                 </button>
               `).join('')}
             </div>
@@ -1617,7 +1619,10 @@ async function renderAlgoSolutionView() {
             </div>
           </div>
           <div class="custom-sol-body">
-            <h3 class="custom-sol-heading" id="custom-sol-title"></h3>
+            <div class="custom-sol-title-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <h3 class="custom-sol-heading" id="custom-sol-title" style="margin-bottom: 0;"></h3>
+              <div class="custom-sol-sub-tabs" id="custom-sol-sub-tabs"></div>
+            </div>
             <div class="custom-sol-code-wrapper" id="custom-sol-code-wrapper" data-code-theme="one-dark">
               <pre><code id="custom-sol-code-block" style="white-space: pre-wrap; word-break: break-all;"></code></pre>
             </div>
@@ -1626,6 +1631,7 @@ async function renderAlgoSolutionView() {
       `;
 
       const titleEl = document.getElementById('custom-sol-title');
+      const subTabsContainer = document.getElementById('custom-sol-sub-tabs');
       const codeBlockEl = document.getElementById('custom-sol-code-block');
       const codeWrapperEl = document.getElementById('custom-sol-code-wrapper');
       const toggleBtn = document.getElementById('algo-toggle-comments');
@@ -1633,10 +1639,37 @@ async function renderAlgoSolutionView() {
       const toggleIcon = toggleBtn.querySelector('svg');
 
       function updateCodeDisplay() {
-        const activeSol = dbSolutions[activeIndex];
+        // Get solutions for the active language
+        const langSolutions = dbSolutions.filter(s => s.language === activeLang);
+        
+        // Safety check if activeSubIndex is out of range
+        if (activeSubIndex >= langSolutions.length) {
+          activeSubIndex = 0;
+        }
+
+        const activeSol = langSolutions[activeSubIndex];
         
         // Update Heading
         titleEl.textContent = activeSol.heading;
+
+        // Render sub-tabs (Alternative Solutions)
+        if (langSolutions.length > 0) {
+          subTabsContainer.innerHTML = langSolutions.map((sol, index) => `
+            <button class="custom-sol-sub-tab ${index === activeSubIndex ? 'active' : ''}" data-sub-index="${index}">
+              Sol ${index + 1}
+            </button>
+          `).join('');
+          
+          // Wire up sub-tab click events
+          subTabsContainer.querySelectorAll('.custom-sol-sub-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              activeSubIndex = parseInt(e.currentTarget.getAttribute('data-sub-index'), 10);
+              updateCodeDisplay();
+            });
+          });
+        } else {
+          subTabsContainer.innerHTML = '';
+        }
 
         // Process comments
         let rawCode = activeSol.solution;
@@ -1647,9 +1680,9 @@ async function renderAlgoSolutionView() {
         // Apply highlighting
         codeBlockEl.innerHTML = highlightCode(rawCode);
 
-        // Update active tab buttons
-        contentArea.querySelectorAll('.custom-sol-tab').forEach((btn, idx) => {
-          if (idx === activeIndex) {
+        // Update active language tab buttons styling
+        contentArea.querySelectorAll('#custom-sol-lang-tabs .custom-sol-tab').forEach(btn => {
+          if (btn.getAttribute('data-lang') === activeLang) {
             btn.classList.add('active');
           } else {
             btn.classList.remove('active');
@@ -1677,10 +1710,11 @@ async function renderAlgoSolutionView() {
         });
       }
 
-      // Tab click listeners
-      contentArea.querySelectorAll('.custom-sol-tab').forEach(button => {
+      // Language Tab click listeners
+      contentArea.querySelectorAll('#custom-sol-lang-tabs .custom-sol-tab').forEach(button => {
         button.addEventListener('click', (e) => {
-          activeIndex = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+          activeLang = e.currentTarget.getAttribute('data-lang');
+          activeSubIndex = 0; // Reset sub index to first solution of the selected language
           updateCodeDisplay();
         });
       });
