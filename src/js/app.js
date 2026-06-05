@@ -1504,9 +1504,11 @@ function showAlgoQuestionPopup(q) {
   // View Question — open LeetCode link
   document.getElementById('algo-btn-view-q').addEventListener('click', () => {
     if (hasLink) {
-      // Open in default browser via Tauri shell or window.open
-      if (window.__TAURI__?.shell) {
-        window.__TAURI__.shell.open(q.question_link);
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
+          console.error("Failed to open URL via Tauri opener:", err);
+          window.open(q.question_link, '_blank');
+        });
       } else {
         window.open(q.question_link, '_blank');
       }
@@ -1558,13 +1560,16 @@ async function renderAlgoSolutionView() {
     </div>
   `;
 
-  // Open LeetCode link via Tauri shell
+  // Open LeetCode link via Tauri opener
   const openLinkBtn = document.getElementById('algo-sol-open-link');
   if (openLinkBtn && q.question_link) {
     openLinkBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      if (window.__TAURI__?.shell) {
-        window.__TAURI__.shell.open(q.question_link);
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
+          console.error("Failed to open URL via Tauri opener:", err);
+          window.open(q.question_link, '_blank');
+        });
       } else {
         window.open(q.question_link, '_blank');
       }
