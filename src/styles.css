@@ -2521,3 +2521,116 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 }
 .algo-sol-link:hover { opacity: 0.75; text-decoration: underline; }
 
+/* Custom Solution Layout */
+.custom-solution-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  flex: 1;
+  overflow: hidden;
+}
+
+.custom-sol-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(var(--primary-rgb), 0.03);
+  border-bottom: 1px solid var(--border);
+}
+
+.custom-sol-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-sol-tab {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--subtext);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.custom-sol-tab:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.custom-sol-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.custom-sol-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.custom-sol-toggle-comments {
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+}
+
+.custom-sol-toggle-comments:hover {
+  background: rgba(var(--primary-rgb), 0.18);
+  border-color: var(--primary);
+}
+
+.custom-sol-body {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.custom-sol-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.custom-sol-code-wrapper {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.custom-sol-code-wrapper pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.custom-sol-code-wrapper code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+  display: block;
+}
+
+

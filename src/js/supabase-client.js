@@ -129,5 +129,11 @@ export const supabaseClient = {
   // Algo & Code — fetch all questions for a given parent_topic ordered by priority_order
   async getLeetcodeByTopic(topic) {
     return await supabaseFetch(`leetcode?select=*&parent_topic=eq.${encodeURIComponent(topic)}&order=priority_order.asc`);
+  },
+
+  // Algo & Code — fetch all solutions for a given question ID
+  async getLeetcodeSolutions(questionId) {
+    return await supabaseFetch(`leet_solution?select=*&question_id=eq.${questionId}&order=created_at.asc`);
   }
 };
+

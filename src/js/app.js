@@ -7,6 +7,16 @@ import { driveService } from './drive-service.js';
 // Access tauri invoke safely
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: async () => ({}) };
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Cache for AI Solver responses to prevent duplicate calls
 const aiCache = new Map();
 
@@ -1523,13 +1533,14 @@ function showAlgoQuestionPopup(q) {
   });
 }
 
-// 6c. Algo Solution View (AI-powered solution via Gemini)
+// 6c. Algo Solution View (AI-powered solution via Gemini or Custom DB Solutions)
 async function renderAlgoSolutionView() {
   const q = store.algoSelectedQuestion;
   if (!q) { store.navigateTo('algo-questions'); return; }
 
   const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
 
+  // Render main layout skeleton
   viewContainer.innerHTML = `
     <div class="algo-solution-layout fade-in">
       <div class="algo-solution-question-card">
@@ -1541,20 +1552,10 @@ async function renderAlgoSolutionView() {
         ${q.question_link ? `<a href="${q.question_link}" class="algo-sol-link" id="algo-sol-open-link">View on LeetCode →</a>` : '<span class="algo-sol-link" style="opacity:0.4;">No link added yet</span>'}
       </div>
 
-      <div class="ai-solver-panel fade-in" style="flex:1;">
-        <div class="ai-blueprint-bg"></div>
-        <div class="ai-solver-header">
-          <div class="ai-solver-header-title"><span>🦊 AI Solution</span></div>
-          <button class="ai-solve-btn" id="algo-solve-trigger">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 22 22 22 12 2"/></svg>
-            <span>Generate Solution</span>
-          </button>
-        </div>
-        <div class="ai-solver-body" id="algo-ai-response">
-          <div class="ai-solver-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            <p>Click <strong>Generate Solution</strong> to get a step-by-step AI walkthrough for this LeetCode problem.</p>
-          </div>
+      <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
+        <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
+          <div class="spinner"></div>
+          <p style="color:var(--primary);font-weight:600;margin-top:16px;">Checking for solutions...</p>
         </div>
       </div>
     </div>
@@ -1576,40 +1577,137 @@ async function renderAlgoSolutionView() {
     });
   }
 
-  const trigger = document.getElementById('algo-solve-trigger');
-  const responseArea = document.getElementById('algo-ai-response');
+  const contentArea = document.getElementById('algo-sol-content-area');
 
-  trigger.addEventListener('click', async () => {
-    trigger.disabled = true;
-    responseArea.innerHTML = `
-      <div class="ai-solver-loading">
-        <div class="spinner"></div>
-        <p style="color:var(--primary);font-weight:600;text-align:center;">Generating solution for "${q.question_name}"...<br/><span style="font-weight:400;font-size:0.85rem;color:var(--subtext);">Analyzing time complexity, approach &amp; code</span></p>
-      </div>
-    `;
-    try {
-      const cacheKey = 'algo_' + q.id;
-      let solution;
-      if (aiCache.has(cacheKey)) {
-        solution = aiCache.get(cacheKey);
-      } else {
-        solution = await aiService.solveQuestion(`LeetCode Problem: ${q.question_name}\n\nProvide a detailed solution including:\n1. Problem understanding\n2. Optimal approach/algorithm\n3. Step-by-step explanation\n4. Code solution (preferably Python and/or JavaScript)\n5. Time and space complexity analysis`);
-        aiCache.set(cacheKey, solution);
+  try {
+    // Fetch custom solutions from database
+    const dbSolutions = await supabaseClient.getLeetcodeSolutions(q.id);
+
+    if (dbSolutions && dbSolutions.length > 0) {
+      // We have custom solutions! Render them
+      let activeIndex = 0;
+      let hideComments = false;
+
+      function renderCustomSolutions() {
+        const activeSol = dbSolutions[activeIndex];
+        
+        // Helper to strip comments
+        const cleanCode = hideComments 
+          ? activeSol.solution.replace(/\/\*[\s\S]*?\*\/|(?<!:)\/\/.*$/gm, '').replace(/^\s*[\r\n]/gm, '')
+          : activeSol.solution;
+
+        contentArea.innerHTML = `
+          <div class="custom-solution-container fade-in" style="display:flex; flex-direction:column; flex:1;">
+            <div class="custom-sol-header-bar">
+              <div class="custom-sol-tabs">
+                ${dbSolutions.map((sol, index) => `
+                  <button class="custom-sol-tab ${index === activeIndex ? 'active' : ''}" data-index="${index}">
+                    ${sol.language}
+                  </button>
+                `).join('')}
+              </div>
+              <div class="custom-sol-actions">
+                <button class="custom-sol-toggle-comments" id="algo-toggle-comments">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;">
+                    ${hideComments 
+                      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>' 
+                      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'}
+                  </svg>
+                  <span>${hideComments ? 'Show Comments' : 'Hide Comments'}</span>
+                </button>
+              </div>
+            </div>
+            <div class="custom-sol-body">
+              <h3 class="custom-sol-heading">${activeSol.heading}</h3>
+              <div class="custom-sol-code-wrapper">
+                <pre><code style="white-space: pre-wrap; word-break: break-all;">${escapeHtml(cleanCode)}</code></pre>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Wire up tab clicks
+        contentArea.querySelectorAll('.custom-sol-tab').forEach(button => {
+          button.addEventListener('click', (e) => {
+            activeIndex = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+            renderCustomSolutions();
+          });
+        });
+
+        // Wire up comment toggle click
+        document.getElementById('algo-toggle-comments').addEventListener('click', () => {
+          hideComments = !hideComments;
+          renderCustomSolutions();
+        });
       }
-      const htmlContent = window.marked.parse(solution);
-      responseArea.innerHTML = `<div class="ai-solver-content">${htmlContent}</div>`;
-    } catch (err) {
-      responseArea.innerHTML = `
-        <div class="drive-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-          <p>Could not generate solution. Check your Gemini API key in Settings.</p>
-          <p style="font-size:0.8rem;color:var(--accent);margin-top:8px;">${err.message || ''}</p>
+
+      renderCustomSolutions();
+
+    } else {
+      // Fallback: AI Solver panel if no custom database solution is found
+      contentArea.innerHTML = `
+        <div class="ai-solver-panel fade-in" style="flex:1;">
+          <div class="ai-blueprint-bg"></div>
+          <div class="ai-solver-header">
+            <div class="ai-solver-header-title"><span>🦊 AI Solution</span></div>
+            <button class="ai-solve-btn" id="algo-solve-trigger">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 22 22 22 12 2"/></svg>
+              <span>Generate Solution</span>
+            </button>
+          </div>
+          <div class="ai-solver-body" id="algo-ai-response">
+            <div class="ai-solver-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+              <p>Click <strong>Generate Solution</strong> to get a step-by-step AI walkthrough for this LeetCode problem.</p>
+            </div>
+          </div>
         </div>
       `;
-    } finally {
-      trigger.disabled = false;
+
+      const trigger = document.getElementById('algo-solve-trigger');
+      const responseArea = document.getElementById('algo-ai-response');
+
+      trigger.addEventListener('click', async () => {
+        trigger.disabled = true;
+        responseArea.innerHTML = `
+          <div class="ai-solver-loading">
+            <div class="spinner"></div>
+            <p style="color:var(--primary);font-weight:600;text-align:center;">Generating solution for "${q.question_name}"...<br/><span style="font-weight:400;font-size:0.85rem;color:var(--subtext);">Analyzing time complexity, approach &amp; code</span></p>
+          </div>
+        `;
+        try {
+          const cacheKey = 'algo_' + q.id;
+          let solution;
+          if (aiCache.has(cacheKey)) {
+            solution = aiCache.get(cacheKey);
+          } else {
+            solution = await aiService.solveQuestion(`LeetCode Problem: ${q.question_name}\n\nProvide a detailed solution including:\n1. Problem understanding\n2. Optimal approach/algorithm\n3. Step-by-step explanation\n4. Code solution (preferably Python and/or JavaScript)\n5. Time and space complexity analysis`);
+            aiCache.set(cacheKey, solution);
+          }
+          const htmlContent = window.marked.parse(solution);
+          responseArea.innerHTML = `<div class="ai-solver-content">${htmlContent}</div>`;
+        } catch (err) {
+          responseArea.innerHTML = `
+            <div class="drive-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              <p>Could not generate solution. Check your Gemini API key in Settings.</p>
+              <p style="font-size:0.8rem;color:var(--accent);margin-top:8px;">${err.message || ''}</p>
+            </div>
+          `;
+        } finally {
+          trigger.disabled = false;
+        }
+      });
     }
-  });
+  } catch (error) {
+    console.error("Error loading solution view:", error);
+    contentArea.innerHTML = `
+      <div class="drive-empty">
+        <p>Error loading solutions from Supabase.</p>
+        <p style="font-size:0.8rem;color:var(--accent);">${error.message || ''}</p>
+      </div>
+    `;
+  }
 }
 
 // 7. Settings View
