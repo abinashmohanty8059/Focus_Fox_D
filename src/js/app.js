@@ -1587,62 +1587,131 @@ async function renderAlgoSolutionView() {
       // We have custom solutions! Render them
       let activeIndex = 0;
       let hideComments = false;
+      let selectedTheme = 'one-dark';
 
-      function renderCustomSolutions() {
-        const activeSol = dbSolutions[activeIndex];
-        
-        // Helper to strip comments
-        const cleanCode = hideComments 
-          ? activeSol.solution.replace(/\/\*[\s\S]*?\*\/|(?<!:)\/\/.*$/gm, '').replace(/^\s*[\r\n]/gm, '')
-          : activeSol.solution;
-
-        contentArea.innerHTML = `
-          <div class="custom-solution-container fade-in" style="display:flex; flex-direction:column; flex:1;">
-            <div class="custom-sol-header-bar">
-              <div class="custom-sol-tabs">
-                ${dbSolutions.map((sol, index) => `
-                  <button class="custom-sol-tab ${index === activeIndex ? 'active' : ''}" data-index="${index}">
-                    ${sol.language}
-                  </button>
-                `).join('')}
-              </div>
-              <div class="custom-sol-actions">
-                <button class="custom-sol-toggle-comments" id="algo-toggle-comments">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;">
-                    ${hideComments 
-                      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>' 
-                      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'}
-                  </svg>
-                  <span>${hideComments ? 'Show Comments' : 'Hide Comments'}</span>
+      // Render static container once
+      contentArea.innerHTML = `
+        <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1;">
+          <div class="custom-sol-header-bar">
+            <div class="custom-sol-tabs">
+              ${dbSolutions.map((sol, index) => `
+                <button class="custom-sol-tab" data-index="${index}">
+                  ${sol.language}
                 </button>
-              </div>
+              `).join('')}
             </div>
-            <div class="custom-sol-body">
-              <h3 class="custom-sol-heading">${activeSol.heading}</h3>
-              <div class="custom-sol-code-wrapper">
-                <pre><code style="white-space: pre-wrap; word-break: break-all;">${escapeHtml(cleanCode)}</code></pre>
-              </div>
+            
+            <div class="custom-sol-theme-selector">
+              <span style="font-size:0.75rem; font-weight:600; color:var(--subtext); margin-right:4px;">Theme:</span>
+              <button class="custom-sol-theme-btn theme-btn-one-dark active" data-theme="one-dark" title="One Dark"></button>
+              <button class="custom-sol-theme-btn theme-btn-monokai" data-theme="monokai" title="Monokai"></button>
+              <button class="custom-sol-theme-btn theme-btn-dracula" data-theme="dracula" title="Dracula"></button>
+              <button class="custom-sol-theme-btn theme-btn-github-light" data-theme="github-light" title="GitHub Light"></button>
+            </div>
+
+            <div class="custom-sol-actions">
+              <button class="custom-sol-toggle-comments" id="algo-toggle-comments">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"></svg>
+                <span class="toggle-text">Hide Comments</span>
+              </button>
             </div>
           </div>
-        `;
+          <div class="custom-sol-body">
+            <h3 class="custom-sol-heading" id="custom-sol-title"></h3>
+            <div class="custom-sol-code-wrapper" id="custom-sol-code-wrapper" data-code-theme="one-dark">
+              <pre><code id="custom-sol-code-block" style="white-space: pre-wrap; word-break: break-all;"></code></pre>
+            </div>
+          </div>
+        </div>
+      `;
 
-        // Wire up tab clicks
-        contentArea.querySelectorAll('.custom-sol-tab').forEach(button => {
-          button.addEventListener('click', (e) => {
-            activeIndex = parseInt(e.currentTarget.getAttribute('data-index'), 10);
-            renderCustomSolutions();
-          });
+      const titleEl = document.getElementById('custom-sol-title');
+      const codeBlockEl = document.getElementById('custom-sol-code-block');
+      const codeWrapperEl = document.getElementById('custom-sol-code-wrapper');
+      const toggleBtn = document.getElementById('algo-toggle-comments');
+      const toggleText = toggleBtn.querySelector('.toggle-text');
+      const toggleIcon = toggleBtn.querySelector('svg');
+
+      function updateCodeDisplay() {
+        const activeSol = dbSolutions[activeIndex];
+        
+        // Update Heading
+        titleEl.textContent = activeSol.heading;
+
+        // Process comments
+        let rawCode = activeSol.solution;
+        if (hideComments) {
+          rawCode = rawCode.replace(/\/\*[\s\S]*?\*\/|(?<!:)\/\/.*$/gm, '').replace(/^\s*[\r\n]/gm, '');
+        }
+
+        // Apply highlighting
+        codeBlockEl.innerHTML = highlightCode(rawCode);
+
+        // Update active tab buttons
+        contentArea.querySelectorAll('.custom-sol-tab').forEach((btn, idx) => {
+          if (idx === activeIndex) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
         });
 
-        // Wire up comment toggle click
-        document.getElementById('algo-toggle-comments').addEventListener('click', () => {
-          hideComments = !hideComments;
-          renderCustomSolutions();
+        // Update Toggle comments button text and icon
+        if (hideComments) {
+          toggleText.textContent = 'Show Comments';
+          toggleIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        } else {
+          toggleText.textContent = 'Hide Comments';
+          toggleIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        }
+      }
+
+      function highlightCode(code) {
+        let escaped = escapeHtml(code);
+        const tokenRegex = /(\/\*[\s\S]*?\*\/|(?<!:)\/\/.*$)|(".*?"|'.*?')|(\b(class|public|private|protected|struct|int|double|float|char|void|int\*|return|if|for|while|new|import|package|include|std|vector|unordered_map|HashMap|Map|Integer|NULL|free|malloc|sizeof)\b)/gm;
+        return escaped.replace(tokenRegex, (match, comment, string, keyword) => {
+          if (comment) return `<span class="code-comment">${comment}</span>`;
+          if (string) return `<span class="code-string">${string}</span>`;
+          if (keyword) return `<span class="code-keyword">${keyword}</span>`;
+          return match;
         });
       }
 
-      renderCustomSolutions();
+      // Tab click listeners
+      contentArea.querySelectorAll('.custom-sol-tab').forEach(button => {
+        button.addEventListener('click', (e) => {
+          activeIndex = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+          updateCodeDisplay();
+        });
+      });
 
+      // Toggle comments click listener
+      toggleBtn.addEventListener('click', () => {
+        hideComments = !hideComments;
+        updateCodeDisplay();
+      });
+
+      // Theme selector button click listeners
+      contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          selectedTheme = e.currentTarget.getAttribute('data-theme');
+          
+          // Update theme active classes
+          contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(b => {
+            if (b === e.currentTarget) {
+              b.classList.add('active');
+            } else {
+              b.classList.remove('active');
+            }
+          });
+          
+          // Update data-code-theme attribute
+          codeWrapperEl.setAttribute('data-code-theme', selectedTheme);
+        });
+      });
+
+      // Initial Render
+      updateCodeDisplay();
     } else {
       // Fallback: AI Solver panel if no custom database solution is found
       contentArea.innerHTML = `

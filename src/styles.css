@@ -2633,4 +2633,87 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   display: block;
 }
 
+/* VS Code Themes for Code Viewer */
+.custom-sol-code-wrapper[data-code-theme="one-dark"] {
+  background: #282c34;
+  border-color: #1e222b;
+}
+.custom-sol-code-wrapper[data-code-theme="one-dark"] code {
+  color: #abb2bf;
+}
+.custom-sol-code-wrapper[data-code-theme="one-dark"] .code-comment { color: #5c6370; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="one-dark"] .code-string { color: #98c379; }
+.custom-sol-code-wrapper[data-code-theme="one-dark"] .code-keyword { color: #c678dd; font-weight: 600; }
+
+.custom-sol-code-wrapper[data-code-theme="monokai"] {
+  background: #272822;
+  border-color: #1e1f1c;
+}
+.custom-sol-code-wrapper[data-code-theme="monokai"] code {
+  color: #f8f8f2;
+}
+.custom-sol-code-wrapper[data-code-theme="monokai"] .code-comment { color: #75715e; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="monokai"] .code-string { color: #e6db74; }
+.custom-sol-code-wrapper[data-code-theme="monokai"] .code-keyword { color: #f92672; font-weight: 600; }
+
+.custom-sol-code-wrapper[data-code-theme="dracula"] {
+  background: #282a36;
+  border-color: #1d1f27;
+}
+.custom-sol-code-wrapper[data-code-theme="dracula"] code {
+  color: #f8f8f2;
+}
+.custom-sol-code-wrapper[data-code-theme="dracula"] .code-comment { color: #6272a4; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="dracula"] .code-string { color: #f1fa8c; }
+.custom-sol-code-wrapper[data-code-theme="dracula"] .code-keyword { color: #ff79c6; font-weight: 600; }
+
+.custom-sol-code-wrapper[data-code-theme="github-light"] {
+  background: #f6f8fa;
+  border-color: #d0d7de;
+}
+.custom-sol-code-wrapper[data-code-theme="github-light"] code {
+  color: #24292f;
+}
+.custom-sol-code-wrapper[data-code-theme="github-light"] .code-comment { color: #6e7781; font-style: italic; }
+.custom-sol-code-wrapper[data-code-theme="github-light"] .code-string { color: #0a3069; }
+.custom-sol-code-wrapper[data-code-theme="github-light"] .code-keyword { color: #cf222e; font-weight: 600; }
+
+/* Theme Selector UI */
+.custom-sol-theme-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  margin: 0 16px;
+}
+
+.custom-sol-theme-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-fast);
+  padding: 0;
+}
+
+.custom-sol-theme-btn:hover {
+  transform: scale(1.2);
+}
+
+.custom-sol-theme-btn.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 6px rgba(var(--primary-rgb), 0.6);
+}
+
+.theme-btn-one-dark { background: #282c34; }
+.theme-btn-monokai { background: #272822; }
+.theme-btn-dracula { background: #282a36; }
+.theme-btn-github-light { background: #ffffff; border: 1px solid #c8c8c8; }
+
+
 
