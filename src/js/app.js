@@ -685,7 +685,7 @@ async function renderTopicsTab(container) {
 
               <button class="topic-start-btn" data-topic-id="${topic.id}">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                <span>Practice Topic Questions</span>
+                <span>Practice Topic PYQ</span>
               </button>
             </div>
           </div>
@@ -1081,23 +1081,48 @@ async function renderQuestionListView() {
     }
   }));
 
-  // Render search panel structure
+  // Extract unique years from all questions
+  const years = [];
+  questions.forEach(q => {
+    if (q.pyqSources) {
+      q.pyqSources.forEach(src => {
+        if (src.year && !years.includes(src.year)) {
+          years.push(src.year);
+        }
+      });
+    }
+  });
+  years.sort((a, b) => b - a);
+
+  // Render search panel structure with All button and 3 dropdowns
   viewContainer.innerHTML = `
-    <div class="search-filter-row fade-in">
-      <div class="search-container">
+    <div class="search-filter-row fade-in" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+      <div class="search-container" style="flex-grow: 1; min-width: 200px;">
         <input type="text" id="q-search" class="search-input" placeholder="Search question text..." />
         <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </div>
-      <div class="filter-pills">
-        <button class="filter-pill active" data-filter="all">All Difficulty</button>
-        <button class="filter-pill" data-filter="easy">Easy</button>
-        <button class="filter-pill" data-filter="medium">Medium</button>
-        <button class="filter-pill" data-filter="hard">Hard</button>
-      </div>
-      <div class="filter-pills">
-        <button class="filter-pill active" data-status="all">All Solved</button>
-        <button class="filter-pill" data-status="unsolved">Unsolved</button>
-        <button class="filter-pill" data-status="solved">Solved</button>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button class="filter-btn-all active" id="btn-filter-all">All</button>
+        
+        <select class="filter-select" id="filter-type">
+          <option value="all">Type</option>
+          <option value="midsem">Mid Sem</option>
+          <option value="endsem">End Sem</option>
+        </select>
+
+        <select class="filter-select" id="filter-diff">
+          <option value="all">Difficulty</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+
+        <select class="filter-select" id="filter-year">
+          <option value="all">Year</option>
+          <option value="asc">Sort: Ascending</option>
+          <option value="desc">Sort: Descending</option>
+          ${years.map(yr => `<option value="${yr}">${yr}</option>`).join('')}
+        </select>
       </div>
     </div>
 
@@ -1108,26 +1133,58 @@ async function renderQuestionListView() {
 
   // Attach search and filter events
   const searchInput = document.getElementById('q-search');
-  const diffFilters = document.querySelectorAll('[data-filter]');
-  const statusFilters = document.querySelectorAll('[data-status]');
+  const btnFilterAll = document.getElementById('btn-filter-all');
+  const filterType = document.getElementById('filter-type');
+  const filterDiff = document.getElementById('filter-diff');
+  const filterYear = document.getElementById('filter-year');
 
+  let activeType = 'all';
   let activeDiff = 'all';
-  let activeStatus = 'all';
+  let activeYearValue = 'all'; // 'all', 'asc', 'desc', or year string
 
   const filterQuestions = () => {
     const query = searchInput.value.toLowerCase().trim();
     
-    const filtered = questions.filter(q => {
+    // Update "All" button active state based on whether any filter is active
+    const isFiltered = query !== '' || activeType !== 'all' || activeDiff !== 'all' || activeYearValue !== 'all';
+    if (isFiltered) {
+      btnFilterAll.classList.remove('active');
+    } else {
+      btnFilterAll.classList.add('active');
+    }
+
+    // 1. Filter questions
+    let filtered = questions.filter(q => {
       const matchesSearch = q.question_text.toLowerCase().includes(query);
       const matchesDiff = activeDiff === 'all' || q.difficulty.toLowerCase() === activeDiff;
       
-      const isSolved = store.isQuestionSolved(q.id);
-      const matchesStatus = activeStatus === 'all' || 
-                            (activeStatus === 'solved' && isSolved) || 
-                            (activeStatus === 'unsolved' && !isSolved);
+      let matchesType = true;
+      if (activeType !== 'all') {
+        matchesType = q.pyqSources && q.pyqSources.some(src => 
+          src.exam_type && src.exam_type.toLowerCase().replace(/[\s-_]/g, '').includes(activeType)
+        );
+      }
+
+      let matchesYear = true;
+      if (activeYearValue !== 'all' && activeYearValue !== 'asc' && activeYearValue !== 'desc') {
+        matchesYear = q.pyqSources && q.pyqSources.some(src => 
+          src.year && src.year.toString() === activeYearValue
+        );
+      }
       
-      return matchesSearch && matchesDiff && matchesStatus;
+      return matchesSearch && matchesDiff && matchesType && matchesYear;
     });
+
+    // 2. Sort questions if Sort option is selected
+    if (activeYearValue === 'asc' || activeYearValue === 'desc') {
+      filtered.sort((a, b) => {
+        const yearsA = (a.pyqSources || []).map(s => s.year).filter(Boolean);
+        const yearsB = (b.pyqSources || []).map(s => s.year).filter(Boolean);
+        const valA = yearsA.length > 0 ? (activeYearValue === 'asc' ? Math.min(...yearsA) : Math.max(...yearsA)) : (activeYearValue === 'asc' ? 9999 : 0);
+        const valB = yearsB.length > 0 ? (activeYearValue === 'asc' ? Math.min(...yearsB) : Math.max(...yearsB)) : (activeYearValue === 'asc' ? 9999 : 0);
+        return activeYearValue === 'asc' ? valA - valB : valB - valA;
+      });
+    }
 
     const listContainer = document.getElementById('q-list-container');
     if (filtered.length === 0) {
@@ -1142,8 +1199,6 @@ async function renderQuestionListView() {
 
     let itemsHtml = '';
     filtered.forEach(q => {
-      const isSolved = store.isQuestionSolved(q.id);
-      
       // PYQ Tags HTML
       let pyqTags = '';
       if (q.pyqSources && q.pyqSources.length > 0) {
@@ -1153,15 +1208,10 @@ async function renderQuestionListView() {
       }
 
       itemsHtml += `
-        <div class="question-row-card fade-in" data-id="${q.id}">
+        <div class="question-row-card fade-in" data-id="${q.id}" style="padding: 18px 24px;">
           <div class="question-info-main">
-            <div class="question-solved-btn topic-checkbox ${isSolved ? 'completed' : ''}" data-id="${q.id}">
-              <svg viewBox="0 0 24 24">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
             <div>
-              <span class="question-text-preview">${q.question_text}</span>
+              <span class="question-text-preview" style="font-size: 1.05rem; font-weight: 500; color: var(--text);">${q.question_text}</span>
               <div class="question-meta-tags">
                 <span class="tag-badge difficulty-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
                 ${pyqTags}
@@ -1175,20 +1225,9 @@ async function renderQuestionListView() {
 
     listContainer.innerHTML = itemsHtml;
 
-    // Attach checkbox toggle
-    listContainer.querySelectorAll('.question-solved-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Avoid opening question detail
-        const qId = btn.getAttribute('data-id');
-        store.toggleQuestionSolved(qId);
-        btn.classList.toggle('completed');
-      });
-    });
-
     // Attach click to open detail
     listContainer.querySelectorAll('.question-row-card').forEach(row => {
-      row.addEventListener('click', (e) => {
-        if (e.target.closest('.question-solved-btn')) return;
+      row.addEventListener('click', () => {
         const qId = row.getAttribute('data-id');
         const q = questions.find(item => item.id === qId);
         store.selectedQuestion = q;
@@ -1197,28 +1236,36 @@ async function renderQuestionListView() {
     });
   };
 
-  // Bind key and button presses
+  // Listeners
   searchInput.addEventListener('input', filterQuestions);
 
-  diffFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      diffFilters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeDiff = btn.getAttribute('data-filter');
-      filterQuestions();
-    });
+  btnFilterAll.addEventListener('click', () => {
+    searchInput.value = '';
+    activeType = 'all';
+    activeDiff = 'all';
+    activeYearValue = 'all';
+    filterType.value = 'all';
+    filterDiff.value = 'all';
+    filterYear.value = 'all';
+    filterQuestions();
   });
 
-  statusFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      statusFilters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeStatus = btn.getAttribute('data-status');
-      filterQuestions();
-    });
+  filterType.addEventListener('change', (e) => {
+    activeType = e.target.value;
+    filterQuestions();
   });
 
-  // Initial Filter
+  filterDiff.addEventListener('change', (e) => {
+    activeDiff = e.target.value;
+    filterQuestions();
+  });
+
+  filterYear.addEventListener('change', (e) => {
+    activeYearValue = e.target.value;
+    filterQuestions();
+  });
+
+  // Initial render of questions
   filterQuestions();
 }
 
