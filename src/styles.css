@@ -2903,6 +2903,119 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   background: linear-gradient(to right, var(--border), transparent);
 }
 
+/* Syllabus Row Card styles */
+.syllabus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.syllabus-row-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  box-shadow: var(--card-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.syllabus-row-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--primary), var(--accent));
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.syllabus-row-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.syllabus-row-card:hover::before {
+  opacity: 1;
+}
+
+.syllabus-row-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.syllabus-row-code {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.1);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.syllabus-row-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.syllabus-row-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 350px;
+  flex-shrink: 0;
+}
+
+.syllabus-row-progress-bar-bg {
+  flex: 1;
+  height: 8px;
+  background-color: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.syllabus-row-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--primary), var(--accent));
+  border-radius: 4px;
+  transition: width var(--transition-slow);
+}
+
+.syllabus-row-progress-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--subtext);
+  white-space: nowrap;
+  width: 140px;
+  text-align: right;
+}
+
+.syllabus-row-arrow {
+  font-size: 1.2rem;
+  color: var(--subtext);
+  opacity: 0.5;
+  transition: var(--transition-fast);
+}
+
+.syllabus-row-card:hover .syllabus-row-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
 
 
 

@@ -612,19 +612,22 @@ async function renderSyllabusView() {
       const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
       return `
-        <div class="subject-card fade-in" data-id="${subj.id}">
-          <span class="subject-code">${subj.code}</span>
-          <h3 class="subject-title">${subj.name}</h3>
+        <div class="syllabus-row-card fade-in" data-id="${subj.id}">
+          <div class="syllabus-row-info">
+            <span class="syllabus-row-code">${subj.code}</span>
+            <span class="syllabus-row-title">${subj.name}</span>
+          </div>
           
-          <div class="subject-progress-container">
-            <div class="subject-progress-text">
-              <span>Progress</span>
+          <div class="syllabus-row-progress-container">
+            <div class="syllabus-row-progress-bar-bg">
+              <div class="syllabus-row-progress-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+            <div class="syllabus-row-progress-text">
               <span>${percentage}% (${completedCount}/${totalTopics} Topics)</span>
             </div>
-            <div class="subject-progress-bar-bg">
-              <div class="subject-progress-bar-fill" style="width: ${percentage}%"></div>
-            </div>
           </div>
+          
+          <span class="syllabus-row-arrow">&rarr;</span>
         </div>
       `;
     }));
@@ -632,7 +635,7 @@ async function renderSyllabusView() {
     return `
       <div class="semester-section" data-semester="${sem}" style="margin-bottom: 40px;">
         <h2 class="semester-section-title">Semester ${sem}</h2>
-        <div class="subjects-grid">
+        <div class="syllabus-list">
           ${subjectCardsHtml.join('')}
         </div>
       </div>
@@ -651,7 +654,7 @@ async function renderSyllabusView() {
   `;
 
   // Attach card click handlers to navigate to the subject dashboard
-  viewContainer.querySelectorAll('.subject-card').forEach(card => {
+  viewContainer.querySelectorAll('.syllabus-row-card').forEach(card => {
     card.addEventListener('click', () => {
       const sId = card.getAttribute('data-id');
       const subject = allSubjects.find(s => s.id === sId);
