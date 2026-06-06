@@ -65,7 +65,7 @@ async function init() {
   // Set brand icon as Fox image if it exists
   const logoContainer = document.getElementById('brand-logo-container');
   if (logoContainer) {
-    logoContainer.innerHTML = `<img src="/assets/logo.jpg" alt="🦊" onerror="this.outerHTML='🦊'"/>`;
+    logoContainer.innerHTML = `<img src="/assets/Foxy.png" alt="🦊" onerror="this.outerHTML='🦊'"/>`;
   }
 
   // Load environment variables from Rust backend
