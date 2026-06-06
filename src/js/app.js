@@ -1203,7 +1203,8 @@ async function renderQuestionListView() {
       let pyqTags = '';
       if (q.pyqSources && q.pyqSources.length > 0) {
         q.pyqSources.forEach(src => {
-          pyqTags += `<span class="tag-badge pyq-tag">${src.year} ${src.exam_type} Q${src.question_number}</span>`;
+          const qNum = src.question_number.toLowerCase().startsWith('q') ? src.question_number : 'Q' + src.question_number;
+          pyqTags += `<span class="tag-badge pyq-tag">${src.year} ${src.exam_type} ${qNum}</span>`;
         });
       }
 
