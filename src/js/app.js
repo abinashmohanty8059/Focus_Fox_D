@@ -1595,8 +1595,8 @@ async function renderAlgoSolutionView() {
       });
       let activeLang = languages[0];
       let activeSubIndex = 0;
-      let hideComments = false;
-      let selectedTheme = 'one-dark';
+      let hideComments = true;
+      let selectedTheme = store.theme === 'dark' ? 'cyberpunk' : 'github-light';
 
       // Render static container once
       contentArea.innerHTML = `
@@ -1612,14 +1612,14 @@ async function renderAlgoSolutionView() {
             
             <div class="custom-sol-theme-selector">
               <span style="font-size:0.75rem; font-weight:600; color:var(--subtext); margin-right:4px;">Theme:</span>
-              <button class="custom-sol-theme-btn theme-btn-one-dark active" data-theme="one-dark" title="One Dark"></button>
-              <button class="custom-sol-theme-btn theme-btn-monokai" data-theme="monokai" title="Monokai"></button>
-              <button class="custom-sol-theme-btn theme-btn-dracula" data-theme="dracula" title="Dracula"></button>
-              <button class="custom-sol-theme-btn theme-btn-nord" data-theme="nord" title="Nord"></button>
-              <button class="custom-sol-theme-btn theme-btn-cyberpunk" data-theme="cyberpunk" title="Cyberpunk"></button>
-              <button class="custom-sol-theme-btn theme-btn-solarized-dark" data-theme="solarized-dark" title="Solarized Dark"></button>
-              <button class="custom-sol-theme-btn theme-btn-winter-blue" data-theme="winter-blue" title="Winter Blue"></button>
-              <button class="custom-sol-theme-btn theme-btn-github-light" data-theme="github-light" title="GitHub Light"></button>
+              <button class="custom-sol-theme-btn theme-btn-one-dark ${selectedTheme === 'one-dark' ? 'active' : ''}" data-theme="one-dark" title="One Dark"></button>
+              <button class="custom-sol-theme-btn theme-btn-monokai ${selectedTheme === 'monokai' ? 'active' : ''}" data-theme="monokai" title="Monokai"></button>
+              <button class="custom-sol-theme-btn theme-btn-dracula ${selectedTheme === 'dracula' ? 'active' : ''}" data-theme="dracula" title="Dracula"></button>
+              <button class="custom-sol-theme-btn theme-btn-nord ${selectedTheme === 'nord' ? 'active' : ''}" data-theme="nord" title="Nord"></button>
+              <button class="custom-sol-theme-btn theme-btn-cyberpunk ${selectedTheme === 'cyberpunk' ? 'active' : ''}" data-theme="cyberpunk" title="Cyberpunk"></button>
+              <button class="custom-sol-theme-btn theme-btn-solarized-dark ${selectedTheme === 'solarized-dark' ? 'active' : ''}" data-theme="solarized-dark" title="Solarized Dark"></button>
+              <button class="custom-sol-theme-btn theme-btn-winter-blue ${selectedTheme === 'winter-blue' ? 'active' : ''}" data-theme="winter-blue" title="Winter Blue"></button>
+              <button class="custom-sol-theme-btn theme-btn-github-light ${selectedTheme === 'github-light' ? 'active' : ''}" data-theme="github-light" title="GitHub Light"></button>
             </div>
 
             <div class="custom-sol-actions">
@@ -1635,7 +1635,7 @@ async function renderAlgoSolutionView() {
               <div class="custom-sol-sub-tabs" id="custom-sol-sub-tabs"></div>
             </div>
             <div class="custom-sol-complexity-row" id="custom-sol-complexity-row" style="display: none; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;"></div>
-            <div class="custom-sol-code-wrapper" id="custom-sol-code-wrapper" data-code-theme="one-dark">
+            <div class="custom-sol-code-wrapper" id="custom-sol-code-wrapper" data-code-theme="${selectedTheme}">
               <pre><code id="custom-sol-code-block" style="white-space: pre-wrap; word-break: break-all;"></code></pre>
             </div>
           </div>
@@ -1671,14 +1671,14 @@ async function renderAlgoSolutionView() {
           if (activeSol.time_complexity && activeSol.time_complexity.trim() !== '') {
             complexityHtml += `
               <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
-                ⏱️ Time: <strong>${escapeHtml(activeSol.time_complexity)}</strong>
+                Time: <strong>${escapeHtml(activeSol.time_complexity)}</strong>
               </span>
             `;
           }
           if (activeSol.space_complexity && activeSol.space_complexity.trim() !== '') {
             complexityHtml += `
               <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
-                💾 Space: <strong>${escapeHtml(activeSol.space_complexity)}</strong>
+                Space: <strong>${escapeHtml(activeSol.space_complexity)}</strong>
               </span>
             `;
           }
