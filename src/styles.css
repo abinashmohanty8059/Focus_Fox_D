@@ -3016,6 +3016,17 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   transform: translateX(3px);
 }
 
+/* Header select styles */
+.header-select:hover {
+  background-color: var(--surface-hover) !important;
+  border-color: var(--primary) !important;
+}
+
+.header-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--border-focus) !important;
+}
+
 
 
 

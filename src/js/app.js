@@ -80,6 +80,15 @@ async function init() {
   // Init store states (theme, selection, etc.)
   store.init();
 
+  // Pre-fetch branches for header filters
+  try {
+    const branches = await supabaseClient.getBranches();
+    store.branches = branches;
+    populateHeaderFilters();
+  } catch (err) {
+    console.error("Failed to pre-fetch branches for header:", err);
+  }
+
   // Bind core UI event listeners
   bindEvents();
 
@@ -214,6 +223,26 @@ function bindEvents() {
     });
   }
 
+  // Header Filters Event Listeners
+  const headerBranchSelect = document.getElementById('header-branch-select');
+  const headerSemesterSelect = document.getElementById('header-semester-select');
+  if (headerBranchSelect && headerSemesterSelect) {
+    headerBranchSelect.addEventListener('change', () => {
+      const newBranchId = headerBranchSelect.value;
+      const newBranch = store.branches.find(b => b.id === newBranchId);
+      if (newBranch) {
+        store.saveSelection(newBranch, store.selectedSemester);
+        handleHeaderFilterChange();
+      }
+    });
+
+    headerSemesterSelect.addEventListener('change', () => {
+      const newSem = parseInt(headerSemesterSelect.value, 10);
+      store.saveSelection(store.selectedBranch, newSem);
+      handleHeaderFilterChange();
+    });
+  }
+
   // Apply initial theme icon
   updateThemeIcon();
 }
@@ -303,6 +332,23 @@ function updateHeader(view, data) {
       headerLeetcodeBtn.style.display = 'none';
     }
   }
+
+  // Show or hide header academic selection filters
+  const headerFilters = document.getElementById('header-filters');
+  if (headerFilters) {
+    if (store.selectedBranch && store.selectedSemester && view !== 'selection') {
+      headerFilters.style.display = 'flex';
+      
+      const branchSel = document.getElementById('header-branch-select');
+      const semSel = document.getElementById('header-semester-select');
+      if (branchSel && semSel) {
+        branchSel.value = store.selectedBranch.id;
+        semSel.value = store.selectedSemester;
+      }
+    } else {
+      headerFilters.style.display = 'none';
+    }
+  }
 }
 
 // Update theme toggle icon
@@ -312,6 +358,49 @@ function updateThemeIcon() {
     icon.innerHTML = `<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>`;
   } else {
     icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>`;
+  }
+}
+
+// Populate branch and semester values in the header dropdowns
+function populateHeaderFilters() {
+  const branchSel = document.getElementById('header-branch-select');
+  const semSel = document.getElementById('header-semester-select');
+  if (!branchSel || !semSel) return;
+
+  // Populate branches
+  let branchOptions = '';
+  store.branches.forEach(b => {
+    branchOptions += `<option value="${b.id}">${b.name}</option>`;
+  });
+  branchSel.innerHTML = branchOptions;
+
+  // Populate semesters
+  let semOptions = '';
+  for (let i = 1; i <= 8; i++) {
+    semOptions += `<option value="${i}">Semester ${i}</option>`;
+  }
+  semSel.innerHTML = semOptions;
+
+  // Set initial values
+  if (store.selectedBranch) {
+    branchSel.value = store.selectedBranch.id;
+  }
+  if (store.selectedSemester) {
+    semSel.value = store.selectedSemester;
+  }
+}
+
+// Handle header filters select option change
+function handleHeaderFilterChange() {
+  // Clear drill-down history when academic selection is changed
+  store.selectedSubject = null;
+  store.selectedTopic = null;
+  store.selectedQuestion = null;
+
+  if (store.currentView === 'syllabus') {
+    store.navigateTo('syllabus');
+  } else {
+    store.navigateTo('subjects');
   }
 }
 
@@ -410,6 +499,7 @@ async function renderSelectionView() {
   
   // Save in store
   store.branches = branches;
+  populateHeaderFilters();
 
   const savedBranchId = store.selectedBranch ? store.selectedBranch.id : '';
   const savedSem = store.selectedSemester || '';
