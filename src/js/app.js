@@ -31,6 +31,7 @@ let viewContainer;
 let headerTitleText;
 let headerSubtitleText;
 let headerBackBtn;
+let headerLeetcodeBtn;
 let themeToggleBtn;
 let navSelection;
 let navDashboard;
@@ -49,6 +50,7 @@ async function init() {
   headerTitleText = document.getElementById('header-title-text');
   headerSubtitleText = document.getElementById('header-subtitle-text');
   headerBackBtn = document.getElementById('header-back-btn');
+  headerLeetcodeBtn = document.getElementById('header-leetcode-btn');
   themeToggleBtn = document.getElementById('theme-toggle-btn');
   navSelection = document.getElementById('nav-selection');
   navDashboard = document.getElementById('nav-dashboard');
@@ -141,6 +143,23 @@ function bindEvents() {
     store.goBack();
   });
 
+  // View on LeetCode Header Button
+  if (headerLeetcodeBtn) {
+    headerLeetcodeBtn.addEventListener('click', () => {
+      const q = store.algoSelectedQuestion;
+      if (q && q.question_link) {
+        if (window.__TAURI__) {
+          invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
+            console.error("Failed to open URL via Tauri opener:", err);
+            window.open(q.question_link, '_blank');
+          });
+        } else {
+          window.open(q.question_link, '_blank');
+        }
+      }
+    });
+  }
+
   // Theme Toggle Button
   themeToggleBtn.addEventListener('click', () => {
     const newTheme = store.theme === 'dark' ? 'light' : 'dark';
@@ -208,6 +227,7 @@ function updateSidebarActiveState(view) {
 
 // Update header titles and back button visibility
 function updateHeader(view, data) {
+  const q = store.algoSelectedQuestion;
   // Back button visibility
   if (store.viewHistory.length > 0 && view !== 'selection') {
     headerBackBtn.style.display = 'flex';
@@ -244,8 +264,27 @@ function updateHeader(view, data) {
     headerTitleText.textContent = store.algoSelectedTopic || "Questions";
     headerSubtitleText.textContent = "Sorted by difficulty — Easy · Medium · Hard";
   } else if (view === 'algo-solution') {
-    headerTitleText.textContent = store.algoSelectedQuestion ? store.algoSelectedQuestion.question_name : "Solution";
-    headerSubtitleText.textContent = "AI-powered solution walkthrough";
+    headerTitleText.textContent = q ? q.question_name : "Solution";
+    if (q) {
+      const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+      headerSubtitleText.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+          <span class="algo-diff-badge ${diffClass}" style="padding: 2px 10px; font-size: 0.72rem;">${q.difficulty}</span>
+          <span class="algo-sol-topic" style="padding: 2px 10px; font-size: 0.72rem;">${q.parent_topic}</span>
+        </div>
+      `;
+    } else {
+      headerSubtitleText.textContent = "Solution walkthrough";
+    }
+  }
+
+  // View on LeetCode button visibility in header
+  if (headerLeetcodeBtn) {
+    if (view === 'algo-solution' && q && q.question_link && q.question_link.trim() !== '') {
+      headerLeetcodeBtn.style.display = 'flex';
+    } else {
+      headerLeetcodeBtn.style.display = 'none';
+    }
   }
 }
 
@@ -1540,18 +1579,9 @@ async function renderAlgoSolutionView() {
 
   const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
 
-  // Render main layout skeleton (compact single-row header card)
+  // Render main layout skeleton
   viewContainer.innerHTML = `
     <div class="algo-solution-layout fade-in">
-      <div class="algo-solution-question-card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 14px 24px;">
-        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-          <h2 class="algo-sol-title" style="margin: 0; font-size: 1.25rem;">${q.question_name}</h2>
-          <span class="algo-diff-badge ${diffClass}" style="padding: 2px 10px; font-size: 0.72rem;">${q.difficulty}</span>
-          <span class="algo-sol-topic" style="padding: 2px 10px; font-size: 0.72rem;">${q.parent_topic}</span>
-        </div>
-        ${q.question_link ? `<a href="${q.question_link}" class="algo-sol-link" id="algo-sol-open-link" style="font-size: 0.85rem; margin: 0;">View on LeetCode →</a>` : '<span class="algo-sol-link" style="opacity:0.4; font-size: 0.85rem; margin: 0;">No link added yet</span>'}
-      </div>
-
       <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
         <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
           <div class="spinner"></div>
@@ -1560,22 +1590,6 @@ async function renderAlgoSolutionView() {
       </div>
     </div>
   `;
-
-  // Open LeetCode link via Tauri opener
-  const openLinkBtn = document.getElementById('algo-sol-open-link');
-  if (openLinkBtn && q.question_link) {
-    openLinkBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (window.__TAURI__) {
-        invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
-          console.error("Failed to open URL via Tauri opener:", err);
-          window.open(q.question_link, '_blank');
-        });
-      } else {
-        window.open(q.question_link, '_blank');
-      }
-    });
-  }
 
   const contentArea = document.getElementById('algo-sol-content-area');
 
