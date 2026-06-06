@@ -1634,6 +1634,7 @@ async function renderAlgoSolutionView() {
               <h3 class="custom-sol-heading" id="custom-sol-title" style="margin-bottom: 0;"></h3>
               <div class="custom-sol-sub-tabs" id="custom-sol-sub-tabs"></div>
             </div>
+            <div class="custom-sol-complexity-row" id="custom-sol-complexity-row" style="display: none; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;"></div>
             <div class="custom-sol-code-wrapper" id="custom-sol-code-wrapper" data-code-theme="one-dark">
               <pre><code id="custom-sol-code-block" style="white-space: pre-wrap; word-break: break-all;"></code></pre>
             </div>
@@ -1662,6 +1663,28 @@ async function renderAlgoSolutionView() {
         
         // Update Heading
         titleEl.textContent = activeSol.heading;
+
+        // Render complexities if they are not null/empty
+        const complexityRow = document.getElementById('custom-sol-complexity-row');
+        if (complexityRow) {
+          let complexityHtml = '';
+          if (activeSol.time_complexity && activeSol.time_complexity.trim() !== '') {
+            complexityHtml += `
+              <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+                ⏱️ Time: <strong>${escapeHtml(activeSol.time_complexity)}</strong>
+              </span>
+            `;
+          }
+          if (activeSol.space_complexity && activeSol.space_complexity.trim() !== '') {
+            complexityHtml += `
+              <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+                💾 Space: <strong>${escapeHtml(activeSol.space_complexity)}</strong>
+              </span>
+            `;
+          }
+          complexityRow.innerHTML = complexityHtml;
+          complexityRow.style.display = complexityHtml ? 'flex' : 'none';
+        }
 
         // Render sub-tabs (Alternative Solutions)
         if (langSolutions.length > 0) {

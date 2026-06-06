@@ -11,7 +11,19 @@ fn greet(name: &str) -> String {
 fn load_env() -> HashMap<String, String> {
     let mut env_vars = HashMap::new();
     
-    // Check multiple directories to locate the .env file
+    // 1. Load compile-time embedded .env contents as the base/default values for production
+    let embedded_env = include_str!("../../.env");
+    for line in embedded_env.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some((key, value)) = line.split_once('=') {
+            env_vars.insert(key.trim().to_string(), value.trim().to_string());
+        }
+    }
+    
+    // 2. Check multiple directories at runtime to locate and overlay a local .env file (if present)
     let paths = vec![
         std::path::PathBuf::from(".env"),
         std::path::PathBuf::from("../.env"),
@@ -51,13 +63,11 @@ fn load_env() -> HashMap<String, String> {
         }
     }
     
-    // Fallback: Also check system environment variables
+    // 3. Fallback/Override: Also check system environment variables
     let keys = vec!["SUPABASE_URL", "SUPABASE_KEY", "GEMINI_API_KEY", "DRIVE_API_KEY"];
     for key in keys {
-        if !env_vars.contains_key(key) {
-            if let Ok(val) = std::env::var(key) {
-                env_vars.insert(key.to_string(), val);
-            }
+        if let Ok(val) = std::env::var(key) {
+            env_vars.insert(key.to_string(), val);
         }
     }
     
