@@ -515,39 +515,134 @@ async function renderSelectionView() {
   }
 
   viewContainer.innerHTML = `
-    <div class="selection-hero fade-in">
-      <h1>🦊 Welcome to Focus Fox</h1>
-      <p>Your ultimate engineering semester companion. Replicated for desktop.</p>
-    </div>
-    
-    <div class="selection-card fade-in">
-      <div class="form-group">
-        <label for="branch-select">Engineering Branch</label>
-        <select id="branch-select" class="custom-select">
-          ${branchOptions}
-        </select>
+    <div class="welcome-container fade-in">
+      <!-- Left Side: Branding & Hero -->
+      <div class="welcome-hero-side">
+        <div class="welcome-logo-wrapper">
+          <img src="/assets/Foxy.png" alt="Focus Fox Logo" class="welcome-logo" />
+        </div>
+        <h1 class="welcome-title">Focus Fox</h1>
+        <p class="welcome-tagline">Your ultimate engineering semester companion.</p>
+        <p class="welcome-description">
+          Master your curriculum, track syllabus completion, explore past year exam papers, study reference notes, and solve complex algorithms with step-by-step AI solutions.
+        </p>
+        
+        <!-- Feature highlights -->
+        <div class="welcome-features">
+          <div class="welcome-feature-item">
+            <span class="welcome-feature-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.5">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6" stroke-linecap="round"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12" stroke-linecap="round"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18" stroke-linecap="round"></line>
+              </svg>
+            </span>
+            <div class="welcome-feature-text">
+              <strong>Sequential Syllabus Tracker</strong>
+              <span>Organize subjects chronologically and track completion.</span>
+            </div>
+          </div>
+          <div class="welcome-feature-item">
+            <span class="welcome-feature-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.5">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </span>
+            <div class="welcome-feature-text">
+              <strong>Curated PYQ & Notes Drive</strong>
+              <span>Direct access to reference resources and previous papers.</span>
+            </div>
+          </div>
+          <div class="welcome-feature-item">
+            <span class="welcome-feature-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--primary)" stroke-width="2.5">
+                <polygon points="12 2 2 22 22 22 12 2"></polygon>
+              </svg>
+            </span>
+            <div class="welcome-feature-text">
+              <strong>AI Powered Solver</strong>
+              <span>Step-by-step explanations and solutions with Gemini AI.</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="semester-select">Academic Semester</label>
-        <select id="semester-select" class="custom-select">
-          ${semesterOptions}
-        </select>
-      </div>
+      <!-- Right Side: Forms & Actions -->
+      <div class="welcome-form-side">
+        <!-- Google Login Container -->
+        <div class="login-card">
+          <h3 class="card-section-title">Get Started</h3>
+          <p class="card-section-subtitle">Sign in to sync your progress automatically.</p>
+          
+          <button class="google-login-btn" id="google-login-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" style="margin-right: 10px;">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+          
+          <div class="login-divider">
+            <span>or select academic path</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="branch-select">Engineering Branch</label>
+            <select id="branch-select" class="custom-select">
+              ${branchOptions}
+            </select>
+          </div>
 
-      <button id="start-btn" class="submit-btn" ${(!savedBranchId || !savedSem) ? 'disabled' : ''}>
-        <span>Start Studying</span>
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-      </button>
+          <div class="form-group">
+            <label for="semester-select">Academic Semester</label>
+            <select id="semester-select" class="custom-select">
+              ${semesterOptions}
+            </select>
+          </div>
+
+          <button id="start-btn" class="submit-btn" style="width: 100%; margin-top: 8px;" ${(!savedBranchId || !savedSem) ? 'disabled' : ''}>
+            <span>Start Studying</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   `;
 
   const branchSelect = document.getElementById('branch-select');
   const semesterSelect = document.getElementById('semester-select');
   const startBtn = document.getElementById('start-btn');
+  const googleBtn = document.getElementById('google-login-btn');
+
+  if (googleBtn) {
+    googleBtn.addEventListener('click', () => {
+      googleBtn.disabled = true;
+      const originalText = googleBtn.innerHTML;
+      googleBtn.innerHTML = `<div class="spinner" style="width: 16px; height: 16px; margin: 0; display: inline-block; vertical-align: middle;"></div>&nbsp;&nbsp;Connecting...`;
+      
+      setTimeout(() => {
+        googleBtn.innerHTML = `✔️ Signed in with Google`;
+        googleBtn.style.borderColor = '#2ecc71';
+        googleBtn.style.color = '#2ecc71';
+        
+        setTimeout(() => {
+          googleBtn.innerHTML = originalText;
+          googleBtn.disabled = false;
+          googleBtn.style.borderColor = '';
+          googleBtn.style.color = '';
+          alert("Successfully authenticated! (Dummy Google Sign-In Completed)");
+        }, 1500);
+      }, 1200);
+    });
+  }
 
   const updateButtonState = () => {
     startBtn.disabled = !branchSelect.value || !semesterSelect.value;
@@ -1194,7 +1289,15 @@ async function renderHandoutTab(container) {
 
   container.innerHTML = `
     <div class="selection-card" style="margin-top: 20px; max-width: 600px; text-align: center;">
-      <div style="font-size: 3rem; color: var(--primary); margin-bottom: 12px;">📑</div>
+      <div style="margin-bottom: 16px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--primary-rgb), 0.1); width: 64px; height: 64px; border-radius: 50%; color: var(--primary);">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
       <h3>Course Handout & Syllabus</h3>
       <p style="color: var(--subtext); margin-top: 10px; margin-bottom: 24px;">
         View the syllabus structure, subject topics weightage, and learning outcomes in your browser.
@@ -1582,7 +1685,12 @@ async function renderQuestionDetailView() {
         <div class="ai-blueprint-bg"></div>
         <div class="ai-solver-header">
           <div class="ai-solver-header-title">
-            <span>🦊 AI Solver</span>
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--primary);">
+                <polygon points="12 2 2 22 22 22 12 2"></polygon>
+              </svg>
+              AI Solver
+            </span>
           </div>
           <button class="ai-solve-btn" id="ai-solve-trigger">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 22 22 22 12 2"/></svg>
@@ -1826,7 +1934,7 @@ function showAlgoQuestionPopup(q) {
           <span>View Solution</span>
         </button>
       </div>
-      ${!hasLink ? '<p class="algo-popup-no-link">⚠️ No LeetCode link added yet — add it from Supabase first.</p>' : ''}
+      ${!hasLink ? `<p class="algo-popup-no-link" style="display: flex; align-items: center; justify-content: center; gap: 6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; flex-shrink: 0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> No LeetCode link added yet — add it from Supabase first.</p>` : ''}
     </div>
   `;
 
@@ -2088,7 +2196,14 @@ async function renderAlgoSolutionView() {
         <div class="ai-solver-panel fade-in" style="flex:1;">
           <div class="ai-blueprint-bg"></div>
           <div class="ai-solver-header">
-            <div class="ai-solver-header-title"><span>🦊 AI Solution</span></div>
+            <div class="ai-solver-header-title">
+              <span style="display: inline-flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--primary);">
+                  <polygon points="12 2 2 22 22 22 12 2"></polygon>
+                </svg>
+                AI Solution
+              </span>
+            </div>
             <button class="ai-solve-btn" id="algo-solve-trigger">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 2 22 22 22 12 2"/></svg>
               <span>Generate Solution</span>

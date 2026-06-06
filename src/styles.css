@@ -3027,6 +3027,199 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   box-shadow: 0 0 0 3px var(--border-focus) !important;
 }
 
+/* Welcome Page Layout */
+.welcome-container {
+  display: flex;
+  gap: 60px;
+  max-width: 1000px;
+  width: 95%;
+  margin: 15px auto 40px auto;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.welcome-hero-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-logo-wrapper {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(var(--primary-rgb), 0.1);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(var(--primary-rgb), 0.2);
+  margin-bottom: 12px;
+  border: 2px solid rgba(var(--primary-rgb), 0.2);
+}
+
+.welcome-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.welcome-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--text), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+
+.welcome-tagline {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+.welcome-description {
+  font-size: 0.95rem;
+  color: var(--subtext);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.welcome-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.welcome-feature-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  background: rgba(var(--primary-rgb), 0.08);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.welcome-feature-text strong {
+  font-size: 0.95rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.welcome-feature-text span {
+  font-size: 0.82rem;
+  color: var(--subtext);
+  line-height: 1.4;
+}
+
+.welcome-form-side {
+  width: 420px;
+  flex-shrink: 0;
+}
+
+/* Login Card and Google Button */
+.login-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.card-section-subtitle {
+  font-size: 0.85rem;
+  color: var(--subtext);
+  margin-bottom: 8px;
+}
+
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: var(--transition-fast);
+}
+
+.google-login-btn:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--subtext);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 8px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.login-divider:not(:empty)::before {
+  margin-right: .5em;
+}
+
+.login-divider:not(:empty)::after {
+  margin-left: .5em;
+}
+
+@media (max-width: 900px) {
+  .welcome-container {
+    flex-direction: column;
+    gap: 40px;
+    margin: 20px auto;
+  }
+  .welcome-form-side {
+    width: 100%;
+  }
+}
+
 
 
 
