@@ -36,6 +36,20 @@ export const supabaseClient = {
     return (data || []).map(item => item.subjects).filter(Boolean);
   },
 
+  async getAllSubjectsForBranch(branchId) {
+    const data = await supabaseFetch(`branch_subjects?select=semester,subjects(id,name,code,pyq_drive_link,notes_drive_link,course_outcome_link)&branch_id=eq.${branchId}`);
+    const results = (data || []).map(item => {
+      if (item.subjects) {
+        return {
+          ...item.subjects,
+          semester: item.semester
+        };
+      }
+      return null;
+    }).filter(Boolean);
+    return results.sort((a, b) => a.semester - b.semester);
+  },
+
   async getTopics(subjectId) {
     return await supabaseFetch(`topics?select=*&subject_id=eq.${subjectId}`);
   },

@@ -37,6 +37,7 @@ let navSelection;
 let navDashboard;
 let navSettings;
 let navAlgo;
+let navSyllabus;
 let lightbox;
 let lightboxImg;
 let lightboxCloseBtn;
@@ -56,6 +57,7 @@ async function init() {
   navDashboard = document.getElementById('nav-dashboard');
   navSettings = document.getElementById('nav-settings');
   navAlgo = document.getElementById('nav-algo');
+  navSyllabus = document.getElementById('nav-syllabus');
   lightbox = document.getElementById('lightbox');
   lightboxImg = document.getElementById('lightbox-img');
   lightboxCloseBtn = document.getElementById('lightbox-close-btn');
@@ -90,6 +92,7 @@ async function init() {
   // Render initial view
   if (store.selectedBranch && store.selectedSemester) {
     navDashboard.style.display = 'flex';
+    if (navSyllabus) navSyllabus.style.display = 'flex';
     store.navigateTo('subjects');
   } else {
     store.navigateTo('selection');
@@ -137,6 +140,14 @@ function bindEvents() {
   navAlgo.addEventListener('click', () => {
     store.navigateTo('algo-topics');
   });
+
+  if (navSyllabus) {
+    navSyllabus.addEventListener('click', () => {
+      if (store.selectedBranch && store.selectedSemester) {
+        store.navigateTo('syllabus');
+      }
+    });
+  }
 
   // Header Back Button
   headerBackBtn.addEventListener('click', () => {
@@ -213,11 +224,14 @@ function updateSidebarActiveState(view) {
   navDashboard.classList.remove('active');
   navSettings.classList.remove('active');
   if (navAlgo) navAlgo.classList.remove('active');
+  if (navSyllabus) navSyllabus.classList.remove('active');
 
   if (view === 'selection') {
     navSelection.classList.add('active');
   } else if (view === 'subjects' || view === 'subject-dashboard' || view === 'question-list' || view === 'question-detail') {
     navDashboard.classList.add('active');
+  } else if (view === 'syllabus') {
+    if (navSyllabus) navSyllabus.classList.add('active');
   } else if (view === 'settings') {
     navSettings.classList.add('active');
   } else if (view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution') {
@@ -242,6 +256,9 @@ function updateHeader(view, data) {
   } else if (view === 'subjects') {
     headerTitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name}` : "Subjects";
     headerSubtitleText.textContent = store.selectedSemester ? `Semester ${store.selectedSemester} Subjects` : "Select subjects";
+  } else if (view === 'syllabus') {
+    headerTitleText.textContent = "Syllabus";
+    headerSubtitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} Curriculum` : "Sequential subject tracker";
   } else if (view === 'subject-dashboard') {
     headerTitleText.textContent = store.selectedSubject ? store.selectedSubject.name : "Subject Dashboard";
     headerSubtitleText.textContent = store.selectedSubject ? `Code: ${store.selectedSubject.code}` : "Study portal";
@@ -317,6 +334,9 @@ async function renderView(view, data) {
         break;
       case 'subjects':
         await renderSubjectsView();
+        break;
+      case 'syllabus':
+        await renderSyllabusView();
         break;
       case 'subject-dashboard':
         await renderSubjectDashboardView();
@@ -453,6 +473,7 @@ async function renderSelectionView() {
     
     store.saveSelection(branch, sem);
     navDashboard.style.display = 'flex';
+    if (navSyllabus) navSyllabus.style.display = 'flex';
     store.navigateTo('subjects');
   });
 }
@@ -529,6 +550,132 @@ async function renderSubjectsView() {
       const subject = subjects.find(s => s.id === sId);
       store.selectedSubject = subject;
       store.navigateTo('subject-dashboard');
+    });
+  });
+}
+
+// 2b. Syllabus View
+async function renderSyllabusView() {
+  const branch = store.selectedBranch;
+  if (!branch) {
+    store.navigateTo('selection');
+    return;
+  }
+
+  // Fetch all subjects across all semesters for this branch
+  const allSubjects = await supabaseClient.getAllSubjectsForBranch(branch.id);
+
+  if (allSubjects.length === 0) {
+    viewContainer.innerHTML = `
+      <div class="selection-card fade-in" style="text-align: center; max-width: 600px;">
+        <h3>No Syllabus Found</h3>
+        <p style="color: var(--subtext); margin-top: 12px; margin-bottom: 24px;">No academic subjects are configured for ${branch.name} yet.</p>
+        <button class="submit-btn" id="change-selection-btn">Change Branch/Semester</button>
+      </div>
+    `;
+    document.getElementById('change-selection-btn').addEventListener('click', () => store.navigateTo('selection'));
+    return;
+  }
+
+  // Group subjects by semester
+  const subjectsBySem = {};
+  allSubjects.forEach(subj => {
+    const sem = subj.semester || 1;
+    if (!subjectsBySem[sem]) {
+      subjectsBySem[sem] = [];
+    }
+    subjectsBySem[sem].push(subj);
+  });
+
+  const semestersPresent = Object.keys(subjectsBySem).map(Number).sort((a, b) => a - b);
+
+  // Generate filter buttons
+  let filterButtonsHtml = `<button class="syllabus-filter-btn active" data-semester="all">All Semesters</button>`;
+  semestersPresent.forEach(sem => {
+    filterButtonsHtml += `<button class="syllabus-filter-btn" data-semester="${sem}">Sem ${sem}</button>`;
+  });
+
+  // Render sections
+  const sectionsHtml = await Promise.all(semestersPresent.map(async (sem) => {
+    const semSubjects = subjectsBySem[sem];
+    
+    // Fetch progress percentages in parallel
+    const subjectCardsHtml = await Promise.all(semSubjects.map(async (subj) => {
+      const topics = await supabaseClient.getTopics(subj.id);
+      const totalTopics = topics.length;
+      let completedCount = 0;
+      
+      if (totalTopics > 0) {
+        completedCount = topics.filter(t => store.isTopicCompleted(t.id)).length;
+      }
+      
+      const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+
+      return `
+        <div class="subject-card fade-in" data-id="${subj.id}">
+          <span class="subject-code">${subj.code}</span>
+          <h3 class="subject-title">${subj.name}</h3>
+          
+          <div class="subject-progress-container">
+            <div class="subject-progress-text">
+              <span>Progress</span>
+              <span>${percentage}% (${completedCount}/${totalTopics} Topics)</span>
+            </div>
+            <div class="subject-progress-bar-bg">
+              <div class="subject-progress-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }));
+
+    return `
+      <div class="semester-section" data-semester="${sem}" style="margin-bottom: 40px;">
+        <h2 class="semester-section-title">Semester ${sem}</h2>
+        <div class="subjects-grid">
+          ${subjectCardsHtml.join('')}
+        </div>
+      </div>
+    `;
+  }));
+
+  viewContainer.innerHTML = `
+    <div class="syllabus-view-container">
+      <div class="syllabus-filters fade-in" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 28px;">
+        ${filterButtonsHtml}
+      </div>
+      <div class="syllabus-content" id="syllabus-content-area">
+        ${sectionsHtml.join('')}
+      </div>
+    </div>
+  `;
+
+  // Attach card click handlers to navigate to the subject dashboard
+  viewContainer.querySelectorAll('.subject-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const sId = card.getAttribute('data-id');
+      const subject = allSubjects.find(s => s.id === sId);
+      store.selectedSubject = subject;
+      store.navigateTo('subject-dashboard');
+    });
+  });
+
+  // Attach filter button click handlers
+  const filterBtns = viewContainer.querySelectorAll('.syllabus-filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const targetSem = btn.getAttribute('data-semester');
+      
+      const sections = viewContainer.querySelectorAll('.semester-section');
+      sections.forEach(sec => {
+        if (targetSem === 'all' || sec.getAttribute('data-semester') === targetSem) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
     });
   });
 }
