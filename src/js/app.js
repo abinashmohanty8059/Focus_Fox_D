@@ -764,17 +764,41 @@ async function renderSubjectsView() {
     return;
   }
 
-  const subjects = await supabaseClient.getSubjectsBySemester(branch.id, semester);
+  // Load customizations from local storage
+  const removedKey = `focus_fox_removed_subjects_${branch.id}_${semester}`;
+  const addedKey = `focus_fox_added_subjects_${branch.id}_${semester}`;
+  
+  const removedIds = JSON.parse(localStorage.getItem(removedKey) || '[]');
+  const addedSubjects = JSON.parse(localStorage.getItem(addedKey) || '[]');
 
-  if (subjects.length === 0) {
+  // Fetch default subjects from database
+  let subjects = await supabaseClient.getSubjectsBySemester(branch.id, semester);
+  if (!subjects) subjects = [];
+
+  // Filter out removed ones
+  let filteredSubjects = subjects.filter(s => !removedIds.includes(s.id));
+
+  // Append added custom ones (deduplicated)
+  const currentIds = new Set(filteredSubjects.map(s => s.id));
+  addedSubjects.forEach(s => {
+    if (!currentIds.has(s.id)) {
+      filteredSubjects.push(s);
+    }
+  });
+
+  if (filteredSubjects.length === 0 && addedSubjects.length === 0) {
     viewContainer.innerHTML = `
       <div class="selection-card fade-in" style="text-align: center; max-width: 600px;">
         <h3>No Subjects Found</h3>
         <p style="color: var(--subtext); margin-top: 12px; margin-bottom: 24px;">No academic subjects are configured for ${branch.name}, Semester ${semester} yet.</p>
-        <button class="submit-btn" id="change-selection-btn">Change Branch/Semester</button>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="submit-btn" id="change-selection-btn">Change Branch/Semester</button>
+          <button class="submit-btn" id="empty-add-trigger" style="background: var(--primary);">Add Subject</button>
+        </div>
       </div>
     `;
     document.getElementById('change-selection-btn').addEventListener('click', () => store.navigateTo('selection'));
+    document.getElementById('empty-add-trigger').addEventListener('click', () => openAddSubjectModal());
     return;
   }
 
@@ -782,7 +806,7 @@ async function renderSubjectsView() {
   let totalTopicsCount = 0;
   let completedTopicsCount = 0;
 
-  const subjectsData = await Promise.all(subjects.map(async (subj, idx) => {
+  const subjectsData = await Promise.all(filteredSubjects.map(async (subj, idx) => {
     const topics = await supabaseClient.getTopics(subj.id);
     const totalTopics = topics.length;
     let completedCount = 0;
@@ -910,6 +934,11 @@ async function renderSubjectsView() {
 
     cardsHtml += `
       <div class="subject-card-v2 fade-in ${subj.themeClass}" data-id="${subj.id}">
+        <!-- Remove button that appears on hover -->
+        <button class="subject-remove-btn" data-id="${subj.id}" title="Remove Subject">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+
         <div class="subject-card-header">
           <div class="subject-icon-box">
             ${subj.iconSvg}
@@ -944,6 +973,16 @@ async function renderSubjectsView() {
       </div>
     `;
   });
+
+  // Append Plus Icon Card at the end of grid
+  cardsHtml += `
+    <div class="add-subject-card fade-in" id="add-subject-trigger">
+      <div class="add-subject-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </div>
+      <span class="add-subject-text">Add Subject</span>
+    </div>
+  `;
 
   viewContainer.innerHTML = `
     <!-- Top Stats and Heatmap Row -->
@@ -982,7 +1021,7 @@ async function renderSubjectsView() {
 
   // Attach card and button click handlers to navigate to subject dashboard
   const navigateToSubject = (subjId) => {
-    const subject = subjects.find(s => s.id === subjId);
+    const subject = filteredSubjects.find(s => s.id === subjId);
     if (subject) {
       store.selectedSubject = subject;
       store.navigateTo('subject-dashboard');
@@ -992,7 +1031,7 @@ async function renderSubjectsView() {
   viewContainer.querySelectorAll('.subject-card-v2').forEach(card => {
     card.addEventListener('click', (e) => {
       // Ignore click if interactive buttons are clicked
-      if (e.target.closest('.subject-options-btn') || e.target.closest('.subject-action-btn')) return;
+      if (e.target.closest('.subject-options-btn') || e.target.closest('.subject-action-btn') || e.target.closest('.subject-remove-btn')) return;
       const sId = card.getAttribute('data-id');
       navigateToSubject(sId);
     });
@@ -1004,6 +1043,145 @@ async function renderSubjectsView() {
       navigateToSubject(sId);
     });
   });
+
+  // Attach click to remove button
+  viewContainer.querySelectorAll('.subject-remove-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sId = btn.getAttribute('data-id');
+      
+      // If it is in locally added list, remove from locally added list
+      let added = JSON.parse(localStorage.getItem(addedKey) || '[]');
+      const isCustomSubj = added.some(s => s.id === sId);
+      if (isCustomSubj) {
+        added = added.filter(s => s.id !== sId);
+        localStorage.setItem(addedKey, JSON.stringify(added));
+      } else {
+        // Otherwise add to removed list
+        let removed = JSON.parse(localStorage.getItem(removedKey) || '[]');
+        if (!removed.includes(sId)) {
+          removed.push(sId);
+          localStorage.setItem(removedKey, JSON.stringify(removed));
+        }
+      }
+      
+      renderSubjectsView();
+    });
+  });
+
+  // Attach click to Add Subject trigger
+  const addTrigger = document.getElementById('add-subject-trigger');
+  if (addTrigger) {
+    addTrigger.addEventListener('click', () => openAddSubjectModal(filteredSubjects));
+  }
+}
+
+// Function to handle Add Subject Custom Modal popup
+async function openAddSubjectModal(filteredSubjects = []) {
+  const modal = document.getElementById('add-subject-modal');
+  const closeBtn = document.getElementById('add-subject-close-btn');
+  const branchSelect = document.getElementById('add-subj-branch');
+  const semSelect = document.getElementById('add-subj-sem');
+  const subjectSelect = document.getElementById('add-subj-subject');
+  const submitBtn = document.getElementById('add-subj-submit-btn');
+
+  if (!modal || !branchSelect || !semSelect || !subjectSelect || !submitBtn) return;
+
+  // Show modal
+  modal.style.display = 'flex';
+
+  // Populate branches dropdown
+  let branchOptions = '';
+  store.branches.forEach(b => {
+    branchOptions += `<option value="${b.id}" ${b.id === store.selectedBranch.id ? 'selected' : ''}>${b.name}</option>`;
+  });
+  branchSelect.innerHTML = branchOptions;
+
+  // Set default semester
+  semSelect.value = store.selectedSemester;
+
+  const updateModalSubjects = async () => {
+    subjectSelect.innerHTML = `<option value="" disabled selected>Loading subjects...</option>`;
+    try {
+      const bId = branchSelect.value;
+      const sem = parseInt(semSelect.value, 10);
+      const allSubjs = await supabaseClient.getSubjectsBySemester(bId, sem);
+      
+      // Filter out subjects already shown on the dashboard
+      const currentShowIds = new Set(filteredSubjects.map(s => s.id));
+      const availableSubjs = allSubjs.filter(s => !currentShowIds.has(s.id));
+      
+      if (availableSubjs.length === 0) {
+        subjectSelect.innerHTML = `<option value="" disabled selected>-- No new subjects available --</option>`;
+        submitBtn.disabled = true;
+      } else {
+        let options = `<option value="" disabled selected>-- Select Subject --</option>`;
+        availableSubjs.forEach(s => {
+          options += `<option value="${s.id}">${s.code} - ${s.name}</option>`;
+        });
+        subjectSelect.innerHTML = options;
+        submitBtn.disabled = false;
+      }
+    } catch (err) {
+      console.error("Failed to load subjects in modal:", err);
+      subjectSelect.innerHTML = `<option value="" disabled selected>Error loading subjects</option>`;
+    }
+  };
+
+  // Bind change events
+  branchSelect.onchange = updateModalSubjects;
+  semSelect.onchange = updateModalSubjects;
+
+  // Initial populate of subjects
+  await updateModalSubjects();
+
+  // Close handlers
+  const closeModal = () => {
+    modal.style.display = 'none';
+  };
+  
+  closeBtn.onclick = closeModal;
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+
+  // Submit handler
+  submitBtn.onclick = async () => {
+    const selectedSubjId = subjectSelect.value;
+    if (!selectedSubjId) return;
+
+    try {
+      const bId = branchSelect.value;
+      const sem = parseInt(semSelect.value, 10);
+      const allSubjs = await supabaseClient.getSubjectsBySemester(bId, sem);
+      const chosenSubj = allSubjs.find(s => s.id === selectedSubjId);
+
+      if (chosenSubj) {
+        const removedKey = `focus_fox_removed_subjects_${store.selectedBranch.id}_${store.selectedSemester}`;
+        const addedKey = `focus_fox_added_subjects_${store.selectedBranch.id}_${store.selectedSemester}`;
+
+        // If the chosen subject was previously removed in this sem dashboard, remove it from removed list
+        let removed = JSON.parse(localStorage.getItem(removedKey) || '[]');
+        if (removed.includes(chosenSubj.id)) {
+          removed = removed.filter(id => id !== chosenSubj.id);
+          localStorage.setItem(removedKey, JSON.stringify(removed));
+        } else {
+          // Otherwise save to added custom list for this sem dashboard
+          let added = JSON.parse(localStorage.getItem(addedKey) || '[]');
+          if (!added.some(s => s.id === chosenSubj.id)) {
+            added.push(chosenSubj);
+            localStorage.setItem(addedKey, JSON.stringify(added));
+          }
+        }
+
+        closeModal();
+        renderSubjectsView();
+      }
+    } catch (err) {
+      console.error("Failed to add subject:", err);
+      alert("An error occurred while adding the subject.");
+    }
+  };
 }
 
 // 2b. Syllabus View
