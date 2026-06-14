@@ -915,14 +915,11 @@ async function renderSubjectsView() {
 
   // Render streak square card
   const streakHtml = `
-    <div class="streak-square-card fade-in">
-      <div class="stat-icon-wrapper orange" style="margin: 0 auto; width: 44px; height: 44px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-      </div>
-      <div class="streak-text-info" style="margin-top: 10px;">
-        <span class="stat-number-val" style="font-size: 1.8rem; display: block; text-align: center;">5</span>
-        <span class="stat-label-text" style="display: block; text-align: center;">Day Streak</span>
-        <span class="stat-label-text" style="display: block; text-align: center; opacity: 0.7; font-size: 0.7rem;">Keep it up!</span>
+    <div class="streak-square-card fade-in" style="justify-content: center; align-items: center; display: flex; flex-direction: column;">
+      <div class="streak-text-info" style="margin-top: 0; display: flex; flex-direction: column; align-items: center;">
+        <span class="stat-number-val" style="font-size: 3.2rem; font-weight: 800; display: flex; align-items: center; gap: 4px; line-height: 1;">5<span style="font-size: 2.6rem;">🔥</span></span>
+        <span class="stat-label-text" style="display: block; text-align: center; margin-top: 6px; font-size: 0.82rem; font-weight: 700;">Day Streak</span>
+        <span class="stat-label-text" style="display: block; text-align: center; opacity: 0.7; font-size: 0.7rem; margin-top: 1px;">Keep it up!</span>
       </div>
     </div>
   `;
@@ -940,12 +937,6 @@ async function renderSubjectsView() {
         <button class="subject-remove-btn" data-id="${subj.id}" title="Remove Subject">
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-
-        <div class="subject-card-header" style="justify-content: flex-end; margin-bottom: 0;">
-          <button class="subject-options-btn" title="Options">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-          </button>
-        </div>
         
         <div class="subject-card-body">
           <span class="subject-card-code">${subj.code}</span>
@@ -995,21 +986,6 @@ async function renderSubjectsView() {
     <div class="active-subjects-section fade-in">
       <div class="active-subjects-header">
         <span class="active-subjects-title">Active Subjects</span>
-        <div class="active-subjects-controls">
-          <select class="active-sort-select">
-            <option>Sort by: Recent</option>
-            <option>Sort by: Alphabetical</option>
-            <option>Sort by: Progress</option>
-          </select>
-          <div class="view-toggle-btns">
-            <button class="view-toggle-btn active" title="Grid View">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            </button>
-            <button class="view-toggle-btn" title="List View">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </button>
-          </div>
-        </div>
       </div>
       <div class="subjects-grid" id="active-subjects-grid">
         ${cardsHtml}

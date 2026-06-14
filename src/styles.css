@@ -3576,7 +3576,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   aspect-ratio: 1;
   width: 100%;
   border-radius: 2px;
-  background: rgba(139, 92, 246, 0.08);
+  background: rgba(var(--primary-rgb), 0.08);
   transition: var(--transition-fast);
   cursor: pointer;
 }
@@ -3586,10 +3586,10 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   outline: 1px solid var(--primary);
 }
 
-.heatmap-cell.level-1 { background: rgba(139, 92, 246, 0.25); }
-.heatmap-cell.level-2 { background: rgba(139, 92, 246, 0.5); }
-.heatmap-cell.level-3 { background: rgba(139, 92, 246, 0.75); }
-.heatmap-cell.level-4 { background: rgba(139, 92, 246, 1); }
+.heatmap-cell.level-1 { background: rgba(var(--primary-rgb), 0.25); }
+.heatmap-cell.level-2 { background: rgba(var(--primary-rgb), 0.5); }
+.heatmap-cell.level-3 { background: rgba(var(--primary-rgb), 0.75); }
+.heatmap-cell.level-4 { background: rgba(var(--primary-rgb), 1); }
 
 .heatmap-legend {
   display: flex;
@@ -3814,7 +3814,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 16px 20px;
   box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
@@ -3822,7 +3822,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   position: relative;
   transition: var(--transition-normal);
   cursor: pointer;
-  min-height: 160px;
+  min-height: 130px;
 }
 
 .subject-card-v2:hover {
@@ -4098,7 +4098,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 160px;
+  min-height: 130px;
   cursor: pointer;
   transition: var(--transition-normal);
   color: var(--subtext);
