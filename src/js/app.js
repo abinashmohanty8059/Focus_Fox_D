@@ -841,9 +841,9 @@ async function renderSubjectsView() {
 
   const overallProgressPercentage = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 67;
 
-  // Render stats cards
-  const statsHtml = `
-    <div class="stats-row">
+  // Render left column stacked stats cards
+  const statsLeftColumnHtml = `
+    <div class="left-stats-column">
       <!-- Subjects Enrolled -->
       <div class="dashboard-stat-card fade-in">
         <div class="stat-icon-wrapper purple">
@@ -865,26 +865,18 @@ async function renderSubjectsView() {
           <span class="stat-label-text">Study Time This Semester</span>
         </div>
       </div>
-
-      <!-- Streak -->
-      <div class="dashboard-stat-card fade-in">
-        <div class="stat-icon-wrapper orange">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-        </div>
-        <div class="stat-text-info">
-          <span class="stat-number-val">5</span>
-          <span class="stat-label-text">Day Streak Keep it up!</span>
-        </div>
-      </div>
     </div>
   `;
 
-  // Render contribution activity heatmap grid (3 rows x 24 columns)
-  const heatmapLevels = [
-    0, 0, 1, 0, 2, 0, 0, 3, 0, 0, 1, 4, 0, 2, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0,
-    0, 2, 0, 0, 0, 1, 3, 0, 0, 4, 0, 0, 2, 0, 3, 0, 0, 1, 0, 0, 3, 1, 0, 0,
-    1, 0, 0, 3, 0, 0, 2, 0, 4, 0, 1, 0, 0, 3, 0, 2, 0, 0, 2, 0, 1, 0, 4, 2
-  ];
+  // Render contribution activity heatmap grid (3 rows x 36 columns for elongated detailed view)
+  const heatmapLevels = [];
+  for (let i = 0; i < 108; i++) {
+    if (i % 7 === 0) heatmapLevels.push(3);
+    else if (i % 5 === 0) heatmapLevels.push(2);
+    else if (i % 3 === 0) heatmapLevels.push(1);
+    else if (i % 11 === 0) heatmapLevels.push(4);
+    else heatmapLevels.push(0);
+  }
   let heatmapCellsHtml = '';
   heatmapLevels.forEach(lvl => {
     heatmapCellsHtml += `<div class="heatmap-cell ${lvl > 0 ? `level-${lvl}` : ''}"></div>`;
@@ -921,6 +913,20 @@ async function renderSubjectsView() {
           </div>
           <span>More</span>
         </div>
+      </div>
+    </div>
+  `;
+
+  // Render streak square card
+  const streakHtml = `
+    <div class="streak-square-card fade-in">
+      <div class="stat-icon-wrapper orange" style="margin: 0 auto; width: 44px; height: 44px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+      </div>
+      <div class="streak-text-info" style="margin-top: 10px;">
+        <span class="stat-number-val" style="font-size: 1.8rem; display: block; text-align: center;">5</span>
+        <span class="stat-label-text" style="display: block; text-align: center;">Day Streak</span>
+        <span class="stat-label-text" style="display: block; text-align: center; opacity: 0.7; font-size: 0.7rem;">Keep it up!</span>
       </div>
     </div>
   `;
@@ -987,10 +993,9 @@ async function renderSubjectsView() {
   viewContainer.innerHTML = `
     <!-- Top Stats and Heatmap Row -->
     <div class="subjects-dashboard-top">
-      <div class="stats-and-learning">
-        ${statsHtml}
-      </div>
+      ${statsLeftColumnHtml}
       ${heatmapHtml}
+      ${streakHtml}
     </div>
 
     <!-- Active Subjects Section -->
