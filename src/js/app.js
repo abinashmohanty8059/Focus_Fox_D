@@ -2430,6 +2430,108 @@ async function renderAlgoTopicsView() {
     };
   }));
 
+  const totalSolved = topicsData.reduce((acc, t) => acc + t.solvedCount, 0);
+  const totalQuestions = topicsData.reduce((acc, t) => acc + t.totalCount, 0);
+
+  // Filter topics with solved questions > 0
+  const activeSolvedTopics = topicsData.filter(t => t.solvedCount > 0);
+
+  // Color palette for chart segments
+  const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#06b6d4', '#a855f7'];
+
+  // --- RING CHART CONFIG ---
+  const svgSize = 340;
+  const center = svgSize / 2;   // 170
+  const radius = 120;
+  const strokeW = 36;
+  const circumference = 2 * Math.PI * radius; // ~753.98
+  const gapSize = 38; // large gap so round caps never overlap
+
+  // Helper: adjust a hex color brightness (positive = lighter, negative = darker)
+  function shiftColor(hex, amt) {
+    let c = parseInt(hex.replace('#',''), 16);
+    let r = Math.min(255, Math.max(0, (c >> 16) + amt));
+    let g = Math.min(255, Math.max(0, ((c >> 8) & 0xFF) + amt));
+    let b = Math.min(255, Math.max(0, (c & 0xFF) + amt));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  let chartDefsHtml = '';
+  let chartCirclesHtml = '';
+
+  // Background track ring
+  chartCirclesHtml += `<circle class="ring-track" cx="${center}" cy="${center}" r="${radius}" />`;
+
+  if (totalSolved === 0) {
+    chartCirclesHtml += `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="var(--border)" stroke-width="${strokeW}" opacity="0.3" />`;
+  } else {
+    const numSegments = activeSolvedTopics.length;
+    const totalGapSpace = numSegments > 1 ? numSegments * gapSize : 0;
+    const usableCircumference = circumference - totalGapSpace;
+
+    let currentOffset = 0;
+    activeSolvedTopics.forEach((t, i) => {
+      const percentage = t.solvedCount / totalSolved;
+      const segmentLength = percentage * usableCircumference;
+      const baseColor = colors[i % colors.length];
+      const highlight = shiftColor(baseColor, 60);
+      const shadow    = shiftColor(baseColor, -40);
+
+      // Glow filter per segment
+      chartDefsHtml += `
+        <filter id="ring-glow-${i}" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      `;
+
+      // Shadow layer (darker, slightly thicker, offset outward) — 3D depth
+      chartCirclesHtml += `
+        <circle cx="${center}" cy="${center}" r="${radius}"
+                fill="none" stroke="${shadow}" stroke-width="${strokeW + 4}"
+                stroke-linecap="round"
+                stroke-dasharray="${segmentLength} ${circumference}"
+                stroke-dashoffset="${-currentOffset}"
+                transform="rotate(-90 ${center} ${center})"
+                opacity="0.45"
+                style="pointer-events:none;" />
+      `;
+
+      // Main segment
+      chartCirclesHtml += `
+        <circle class="ring-segment"
+                cx="${center}" cy="${center}" r="${radius}"
+                stroke="${baseColor}"
+                stroke-dasharray="${segmentLength} ${circumference}"
+                stroke-dashoffset="${-currentOffset}"
+                transform="rotate(-90 ${center} ${center})"
+                filter="url(#ring-glow-${i})"
+                data-topic="${t.name}"
+                data-solved="${t.solvedCount}" />
+      `;
+
+      // Highlight layer (lighter, thinner, offset inward) — 3D shine
+      chartCirclesHtml += `
+        <circle cx="${center}" cy="${center}" r="${radius - 6}"
+                fill="none" stroke="${highlight}" stroke-width="8"
+                stroke-linecap="round"
+                stroke-dasharray="${segmentLength} ${circumference}"
+                stroke-dashoffset="${-currentOffset}"
+                transform="rotate(-90 ${center} ${center})"
+                opacity="0.35"
+                style="pointer-events:none;" />
+      `;
+
+      currentOffset += segmentLength + gapSize;
+    });
+  }
+
+  const chartSegmentsHtml = `<defs>${chartDefsHtml}</defs>${chartCirclesHtml}`;
+
+
   const cardsHtml = topicsData.map((topic) => {
     const icon = topicIcons[topic.name] || defaultIcon;
     return `
@@ -2449,12 +2551,97 @@ async function renderAlgoTopicsView() {
   }).join('');
 
   viewContainer.innerHTML = `
-    <div class="algo-topics-header fade-in">
+    <!-- Tooltip for ring chart -->
+    <div id="ring-chart-tooltip"></div>
+
+    <!-- Header outside grid so columns start at the exact same vertical level -->
+    <div class="algo-topics-header fade-in" style="margin-bottom: 24px;">
       <h2>Choose a Topic</h2>
       <p>Select a data structure or algorithm to practice LeetCode questions</p>
     </div>
-    <div class="algo-topics-grid">${cardsHtml}</div>
+
+    <div class="algo-dashboard-layout" style="display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 32px; align-items: start; width: 100%;">
+      <!-- Left Side: Topics Grid (aligned with first row) -->
+      <div class="algo-topics-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+        ${cardsHtml}
+      </div>
+
+      <!-- Right Side: Analytics and Companies Stack -->
+      <div style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 20px; z-index: 5;">
+        <!-- Container 1: Progress Analytics -->
+        <div class="algo-analytics-panel fade-in" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--card-shadow); display: flex; flex-direction: column; align-items: center; gap: 24px;">
+           <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text); align-self: flex-start; margin: 0;">Progress Analytics</h3>
+           
+           <!-- Big modern liquid doughnut chart -->
+           <div class="ring-chart-wrapper">
+             <!-- Animated glow pulse -->
+             <div class="ring-glow-pulse"></div>
+             <!-- Liquid shimmer overlay -->
+             <div class="ring-liquid-shimmer"></div>
+             <!-- SVG Ring -->
+             <svg class="ring-chart-svg" viewBox="0 0 ${svgSize} ${svgSize}" style="position: relative; z-index: 1;">
+               ${chartSegmentsHtml}
+             </svg>
+             <!-- Center label -->
+             <div class="ring-center-label">
+               <span class="ring-center-count">${totalSolved}</span>
+               <span class="ring-center-subtitle">Solved</span>
+             </div>
+           </div>
+        </div>
+
+        <!-- Container 2: Target Companies -->
+        <div class="algo-companies-panel fade-in" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px 28px; box-shadow: var(--card-shadow);">
+           <h4 style="font-size: 0.78rem; font-weight: 700; color: var(--subtext); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;">Target Companies</h4>
+           <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+             <span class="company-badge" style="background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px;"><span style="color: #4285F4; font-weight: 800;">G</span> Google</span>
+             <span class="company-badge" style="background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px;"><span style="color: #F25022; font-weight: 800;">M</span> Microsoft</span>
+             <span class="company-badge" style="background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px;"><span style="color: #FF9900; font-weight: 800;">a</span> Amazon</span>
+             <span class="company-badge" style="background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px;"><span style="color: #0668E1; font-weight: 800;">∞</span> Meta</span>
+             <span class="company-badge" style="background: var(--bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px;"><span style="color: #E50914; font-weight: 800;">N</span> Netflix</span>
+           </div>
+        </div>
+      </div>
+    </div>
   `;
+
+  // Attach hover events to ring chart segments
+  const segments = viewContainer.querySelectorAll('.ring-segment');
+  const tooltip = document.getElementById('ring-chart-tooltip');
+
+  segments.forEach(seg => {
+    seg.addEventListener('mouseenter', (e) => {
+      // Scale up stroke on hover handled by CSS, but add brightness
+      seg.style.strokeWidth = '44';
+      seg.style.filter = `drop-shadow(0 6px 24px rgba(0,0,0,0.4)) brightness(1.2)`;
+
+      const topicName = seg.getAttribute('data-topic');
+      const solvedCount = seg.getAttribute('data-solved');
+
+      if (tooltip) {
+        tooltip.innerHTML = `${topicName} <span style="margin: 0 6px; color: var(--primary);">→</span> ${solvedCount} Solved`;
+        tooltip.style.display = 'block';
+        tooltip.style.opacity = '1';
+      }
+    });
+
+    seg.addEventListener('mousemove', (e) => {
+      if (tooltip) {
+        const rect = viewContainer.getBoundingClientRect();
+        tooltip.style.left = `${e.clientX - rect.left + 18}px`;
+        tooltip.style.top = `${e.clientY - rect.top - 18}px`;
+      }
+    });
+
+    seg.addEventListener('mouseleave', () => {
+      seg.style.strokeWidth = '';
+      seg.style.filter = '';
+      if (tooltip) {
+        tooltip.style.display = 'none';
+        tooltip.style.opacity = '0';
+      }
+    });
+  });
 
   document.querySelectorAll('.algo-topic-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -2463,6 +2650,7 @@ async function renderAlgoTopicsView() {
     });
   });
 }
+
 
 // 6b. Algo Questions View (3-column Easy | Medium | Hard)
 async function renderAlgoQuestionsView() {
