@@ -243,6 +243,38 @@ function bindEvents() {
     });
   }
 
+  // Header subject search listener
+  const headerSearchInput = document.getElementById('header-subject-search');
+  if (headerSearchInput) {
+    headerSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const grid = document.getElementById('active-subjects-grid');
+      if (grid) {
+        const cards = grid.querySelectorAll('.subject-card-v2');
+        cards.forEach(card => {
+          const title = card.querySelector('.subject-card-title').textContent.toLowerCase();
+          const code = card.querySelector('.subject-card-code').textContent.toLowerCase();
+          if (title.includes(query) || code.includes(query)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      }
+    });
+  }
+
+  // Ctrl+K key shortcut to focus search
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('header-subject-search');
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }
+  });
+
   // Apply initial theme icon
   updateThemeIcon();
 }
@@ -278,13 +310,28 @@ function updateHeader(view, data) {
     headerBackBtn.style.display = 'none';
   }
 
+  // Manage Redesigned Header Elements
+  const searchContainer = document.getElementById('header-search-container');
+  const notifBtn = document.getElementById('header-notification-btn');
+  const profile = document.getElementById('header-profile');
+  if (searchContainer) searchContainer.style.display = 'none';
+  if (notifBtn) notifBtn.style.display = 'none';
+  if (profile) profile.style.display = 'none';
+
   // Header texts
   if (view === 'selection') {
     headerTitleText.textContent = "Academic Selection";
     headerSubtitleText.textContent = "Select your branch and semester to get started";
   } else if (view === 'subjects') {
-    headerTitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name}` : "Subjects";
-    headerSubtitleText.textContent = store.selectedSemester ? `Semester ${store.selectedSemester} Subjects` : "Select subjects";
+    headerTitleText.textContent = "Good Evening, Abinash 👋";
+    headerSubtitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} • Semester ${store.selectedSemester}` : "Subjects";
+    if (searchContainer) searchContainer.style.display = 'flex';
+    if (notifBtn) notifBtn.style.display = 'flex';
+    if (profile) {
+      profile.style.display = 'flex';
+      const fallback = profile.querySelector('.profile-avatar-fallback');
+      if (fallback) fallback.textContent = 'A';
+    }
   } else if (view === 'syllabus') {
     headerTitleText.textContent = "Syllabus";
     headerSubtitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} Curriculum` : "Sequential subject tracker";
@@ -663,6 +710,50 @@ async function renderSelectionView() {
   });
 }
 
+// Helper to assign a color theme and SVG icon for subjects on the redesigned dashboard
+function getSubjectThemeAndIcon(subj, index) {
+  const name = (subj.name || '').toLowerCase();
+  
+  if (name.includes('intelligence') || name.includes('computational')) {
+    return {
+      themeClass: 'theme-purple',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1 0-3.12 3 3 0 0 1 0-3.88 2.5 2.5 0 0 1 0-3.12A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 0-3.12 3 3 0 0 0 0-3.88 2.5 2.5 0 0 0 0-3.12A2.5 2.5 0 0 0 14.5 2Z"/></svg>`
+    };
+  } else if (name.includes('distributed') || name.includes('operating') || name.includes('system') || name.includes('dos')) {
+    return {
+      themeClass: 'theme-blue',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`
+    };
+  } else if (name.includes('algorithm') || name.includes('design') || name.includes('analysis')) {
+    return {
+      themeClass: 'theme-orange',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="22" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><rect x="16" y="12" width="6" height="6" rx="1"/><path d="M12 8v14M5 12h14"/></svg>`
+    };
+  } else if (name.includes('high') || name.includes('performance') || name.includes('computing')) {
+    return {
+      themeClass: 'theme-green',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.25-2.5 3.5-2.5 3.5s2.25-1 3.5-2.5L18 5.5 14.5 2 4.5 16.5Z"/><path d="M14 10 9 5M9 15l-4-4"/></svg>`
+    };
+  } else if (name.includes('image') || name.includes('processing') || name.includes('applications')) {
+    return {
+      themeClass: 'theme-pink',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+    };
+  } else if (name.includes('economics') || name.includes('financial') || name.includes('engineering')) {
+    return {
+      themeClass: 'theme-yellow',
+      iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
+    };
+  }
+  
+  const fallbacks = [
+    { themeClass: 'theme-purple', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>` },
+    { themeClass: 'theme-blue', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>` },
+    { themeClass: 'theme-orange', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v13M5 12h14"/></svg>` }
+  ];
+  return fallbacks[index % fallbacks.length];
+}
+
 // 2. Subjects View
 async function renderSubjectsView() {
   const branch = store.selectedBranch;
@@ -687,10 +778,11 @@ async function renderSubjectsView() {
     return;
   }
 
-  // Calculate completion percentage for each subject
-  // In a real app we'd fetch all topics for all subjects to count. Let's do that dynamically!
-  const subjectCardsHtml = await Promise.all(subjects.map(async (subj) => {
-    // Fetch topics for this subject
+  // Calculate subject completion percentages and prepare metadata
+  let totalTopicsCount = 0;
+  let completedTopicsCount = 0;
+
+  const subjectsData = await Promise.all(subjects.map(async (subj, idx) => {
     const topics = await supabaseClient.getTopics(subj.id);
     const totalTopics = topics.length;
     let completedCount = 0;
@@ -699,48 +791,217 @@ async function renderSubjectsView() {
       completedCount = topics.filter(t => store.isTopicCompleted(t.id)).length;
     }
     
+    totalTopicsCount += totalTopics;
+    completedTopicsCount += completedCount;
     const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const themeInfo = getSubjectThemeAndIcon(subj, idx);
 
-    return `
-      <div class="subject-card fade-in" data-id="${subj.id}">
-        <span class="subject-code">${subj.code}</span>
-        <h3 class="subject-title">${subj.name}</h3>
-        
-        <div class="subject-progress-container">
-          <div class="subject-progress-text">
-            <span>Progress</span>
-            <span>${percentage}% (${completedCount}/${totalTopics} Topics)</span>
-          </div>
-          <div class="subject-progress-bar-bg">
-            <div class="subject-progress-bar-fill" data-percentage="${percentage}"></div>
-          </div>
-        </div>
-      </div>
-    `;
+    // Get/Set dynamic study time for UI fidelity
+    const timeKey = `focus_fox_study_time_${subj.id}`;
+    let studyTime = localStorage.getItem(timeKey);
+    if (!studyTime) {
+      studyTime = (subj.name.toLowerCase().includes('intelligence') || subj.name.toLowerCase().includes('computational')) ? '3h 20m studied' : '0m studied';
+      localStorage.setItem(timeKey, studyTime);
+    }
+
+    return {
+      ...subj,
+      totalTopics,
+      completedCount,
+      percentage,
+      themeClass: themeInfo.themeClass,
+      iconSvg: themeInfo.iconSvg,
+      studyTime
+    };
   }));
 
-  viewContainer.innerHTML = `
-    <div class="subjects-header fade-in">
-      <h2>Active Courses</h2>
-    </div>
-    <div class="subjects-grid">
-      ${subjectCardsHtml.join('')}
+  const overallProgressPercentage = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 67;
+
+  // Render stats cards
+  const statsHtml = `
+    <div class="stats-row">
+      <!-- Subjects Enrolled -->
+      <div class="dashboard-stat-card fade-in">
+        <div class="stat-icon-wrapper purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="stat-text-info">
+          <span class="stat-number-val">${subjectsData.length}</span>
+          <span class="stat-label-text">Subjects Enrolled</span>
+        </div>
+      </div>
+
+      <!-- Study Time -->
+      <div class="dashboard-stat-card fade-in">
+        <div class="stat-icon-wrapper blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-text-info">
+          <span class="stat-number-val">32h</span>
+          <span class="stat-label-text">Study Time This Semester</span>
+        </div>
+      </div>
+
+      <!-- Streak -->
+      <div class="dashboard-stat-card fade-in">
+        <div class="stat-icon-wrapper orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        </div>
+        <div class="stat-text-info">
+          <span class="stat-number-val">5</span>
+          <span class="stat-label-text">Day Streak Keep it up!</span>
+        </div>
+      </div>
     </div>
   `;
 
-  // Set progress bar widths programmatically to comply with CSP on inline styles
-  viewContainer.querySelectorAll('.subject-progress-bar-fill').forEach(fill => {
-    const pct = fill.getAttribute('data-percentage');
-    fill.style.width = pct + '%';
+  // Render contribution activity heatmap grid (3 rows x 24 columns)
+  const heatmapLevels = [
+    0, 0, 1, 0, 2, 0, 0, 3, 0, 0, 1, 4, 0, 2, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0,
+    0, 2, 0, 0, 0, 1, 3, 0, 0, 4, 0, 0, 2, 0, 3, 0, 0, 1, 0, 0, 3, 1, 0, 0,
+    1, 0, 0, 3, 0, 0, 2, 0, 4, 0, 1, 0, 0, 3, 0, 2, 0, 0, 2, 0, 1, 0, 4, 2
+  ];
+  let heatmapCellsHtml = '';
+  heatmapLevels.forEach(lvl => {
+    heatmapCellsHtml += `<div class="heatmap-cell ${lvl > 0 ? `level-${lvl}` : ''}"></div>`;
   });
 
-  // Attach card click handlers
-  document.querySelectorAll('.subject-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const sId = card.getAttribute('data-id');
-      const subject = subjects.find(s => s.id === sId);
+  const heatmapHtml = `
+    <div class="study-activity-card fade-in">
+      <div class="activity-header">
+        <span class="activity-title">Study Activity</span>
+        <select class="activity-select">
+          <option>This Month</option>
+          <option>Last Month</option>
+        </select>
+      </div>
+      <div class="heatmap-container">
+        <div class="heatmap-wrapper">
+          <div class="heatmap-labels">
+            <span class="heatmap-row-label">M</span>
+            <span class="heatmap-row-label">W</span>
+            <span class="heatmap-row-label">F</span>
+          </div>
+          <div class="heatmap-grid">
+            ${heatmapCellsHtml}
+          </div>
+        </div>
+        <div class="heatmap-legend">
+          <span>Less</span>
+          <div class="legend-cells">
+            <div class="heatmap-cell"></div>
+            <div class="heatmap-cell level-1"></div>
+            <div class="heatmap-cell level-2"></div>
+            <div class="heatmap-cell level-3"></div>
+            <div class="heatmap-cell level-4"></div>
+          </div>
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Render active subjects grid headers and list
+  let cardsHtml = '';
+  subjectsData.forEach((subj) => {
+    const isStarted = subj.percentage > 0;
+    const buttonLabel = isStarted ? 'Continue' : 'Start';
+    const buttonClass = isStarted ? 'subject-action-btn filled' : 'subject-action-btn';
+
+    cardsHtml += `
+      <div class="subject-card-v2 fade-in ${subj.themeClass}" data-id="${subj.id}">
+        <div class="subject-card-header">
+          <div class="subject-icon-box">
+            ${subj.iconSvg}
+          </div>
+          <button class="subject-options-btn" title="Options">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </button>
+        </div>
+        
+        <div class="subject-card-body">
+          <span class="subject-card-code">${subj.code}</span>
+          <h3 class="subject-card-title">${subj.name}</h3>
+          
+          <div class="subject-card-progress">
+            <div class="subject-card-progress-bar-bg">
+              <div class="subject-card-progress-bar-fill" style="width: ${subj.percentage}%;"></div>
+            </div>
+            <div class="subject-card-progress-info">
+              <span>${subj.completedCount} / ${subj.totalTopics} Topics</span>
+              <span class="subject-card-progress-pct">${subj.percentage}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="subject-card-footer">
+          <div class="subject-study-time">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>${subj.studyTime}</span>
+          </div>
+          <button class="${buttonClass}" data-id="${subj.id}">${buttonLabel}</button>
+        </div>
+      </div>
+    `;
+  });
+
+  viewContainer.innerHTML = `
+    <!-- Top Stats and Heatmap Row -->
+    <div class="subjects-dashboard-top">
+      <div class="stats-and-learning">
+        ${statsHtml}
+      </div>
+      ${heatmapHtml}
+    </div>
+
+    <!-- Active Subjects Section -->
+    <div class="active-subjects-section fade-in">
+      <div class="active-subjects-header">
+        <span class="active-subjects-title">Active Subjects</span>
+        <div class="active-subjects-controls">
+          <select class="active-sort-select">
+            <option>Sort by: Recent</option>
+            <option>Sort by: Alphabetical</option>
+            <option>Sort by: Progress</option>
+          </select>
+          <div class="view-toggle-btns">
+            <button class="view-toggle-btn active" title="Grid View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </button>
+            <button class="view-toggle-btn" title="List View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="subjects-grid" id="active-subjects-grid">
+        ${cardsHtml}
+      </div>
+    </div>
+  `;
+
+  // Attach card and button click handlers to navigate to subject dashboard
+  const navigateToSubject = (subjId) => {
+    const subject = subjects.find(s => s.id === subjId);
+    if (subject) {
       store.selectedSubject = subject;
       store.navigateTo('subject-dashboard');
+    }
+  };
+
+  viewContainer.querySelectorAll('.subject-card-v2').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // Ignore click if interactive buttons are clicked
+      if (e.target.closest('.subject-options-btn') || e.target.closest('.subject-action-btn')) return;
+      const sId = card.getAttribute('data-id');
+      navigateToSubject(sId);
+    });
+  });
+
+  viewContainer.querySelectorAll('.subject-action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sId = btn.getAttribute('data-id');
+      navigateToSubject(sId);
     });
   });
 }
