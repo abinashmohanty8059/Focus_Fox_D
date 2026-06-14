@@ -845,7 +845,7 @@ async function renderSubjectsView() {
   const statsLeftColumnHtml = `
     <div class="left-stats-column">
       <!-- Subjects Enrolled -->
-      <div class="dashboard-stat-card fade-in">
+      <div class="dashboard-stat-card fade-in" id="enrolled-subjects-trigger" style="cursor: pointer;">
         <div class="stat-icon-wrapper purple">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         </div>
@@ -1079,6 +1079,22 @@ async function renderSubjectsView() {
   if (addTrigger) {
     addTrigger.addEventListener('click', () => openAddSubjectModal(filteredSubjects));
   }
+
+  // Attach click to Enrolled Subjects trigger
+  const enrolledTrigger = document.getElementById('enrolled-subjects-trigger');
+  if (enrolledTrigger) {
+    enrolledTrigger.addEventListener('click', () => openEnrolledSubjectsModal());
+  }
+
+  // Attach click to Heatmap Analytics card
+  const heatmapTrigger = viewContainer.querySelector('.study-activity-card');
+  if (heatmapTrigger) {
+    heatmapTrigger.addEventListener('click', (e) => {
+      // Don't trigger modal if dropdown is clicked
+      if (e.target.closest('.activity-select')) return;
+      openHeatmapAnalyticsModal();
+    });
+  }
 }
 
 // Function to handle Add Subject Custom Modal popup
@@ -1186,6 +1202,156 @@ async function openAddSubjectModal(filteredSubjects = []) {
       console.error("Failed to add subject:", err);
       alert("An error occurred while adding the subject.");
     }
+  };
+}
+
+// Function to handle Enrolled Subjects Customizer popup
+async function openEnrolledSubjectsModal() {
+  const modal = document.getElementById('enrolled-subjects-modal');
+  const closeBtn = document.getElementById('enrolled-close-btn');
+  const listContainer = document.getElementById('enrolled-subjects-list-container');
+  const quickSelect = document.getElementById('quick-enroll-select');
+  const quickBtn = document.getElementById('quick-enroll-btn');
+
+  if (!modal || !closeBtn || !listContainer || !quickSelect || !quickBtn) return;
+
+  // Show modal
+  modal.style.display = 'flex';
+
+  const branch = store.selectedBranch;
+  const semester = store.selectedSemester;
+  const removedKey = `focus_fox_removed_subjects_${branch.id}_${semester}`;
+  const addedKey = `focus_fox_added_subjects_${branch.id}_${semester}`;
+
+  const refreshList = async () => {
+    // Get current lists from localStorage
+    const removedIds = JSON.parse(localStorage.getItem(removedKey) || '[]');
+    const addedSubjects = JSON.parse(localStorage.getItem(addedKey) || '[]');
+
+    // Get database subjects
+    let subjects = await supabaseClient.getSubjectsBySemester(branch.id, semester);
+    if (!subjects) subjects = [];
+
+    // Filter out removed ones
+    let enrolled = subjects.filter(s => !removedIds.includes(s.id));
+    // Append custom added ones
+    const currentIds = new Set(enrolled.map(s => s.id));
+    addedSubjects.forEach(s => {
+      if (!currentIds.has(s.id)) {
+        enrolled.push(s);
+      }
+    });
+
+    // 1. Render currently enrolled subjects list
+    if (enrolled.length === 0) {
+      listContainer.innerHTML = `<p style="color: var(--subtext); font-size: 0.85rem; text-align: center; margin: 20px 0;">No subjects enrolled.</p>`;
+    } else {
+      let listHtml = '';
+      enrolled.forEach(subj => {
+        listHtml += `
+          <div class="modal-subject-row" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; border-radius: var(--radius-md);">
+            <div class="modal-subject-info">
+              <span class="modal-subject-code" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; display: block;">${subj.code}</span>
+              <span class="modal-subject-title" style="font-size: 0.85rem; color: var(--text); font-weight: 500;">${subj.name}</span>
+            </div>
+            <button class="modal-subject-remove-btn" data-id="${subj.id}" title="Remove Subject" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: var(--transition-fast);">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+        `;
+      });
+      listContainer.innerHTML = listHtml;
+
+      // Attach subtract event listeners
+      listContainer.querySelectorAll('.modal-subject-remove-btn').forEach(btn => {
+        btn.onclick = () => {
+          const sId = btn.getAttribute('data-id');
+          
+          let added = JSON.parse(localStorage.getItem(addedKey) || '[]');
+          const isCustomSubj = added.some(s => s.id === sId);
+          if (isCustomSubj) {
+            added = added.filter(s => s.id !== sId);
+            localStorage.setItem(addedKey, JSON.stringify(added));
+          } else {
+            let removed = JSON.parse(localStorage.getItem(removedKey) || '[]');
+            if (!removed.includes(sId)) {
+              removed.push(sId);
+              localStorage.setItem(removedKey, JSON.stringify(removed));
+            }
+          }
+
+          // Refresh the modal content and the dashboard view
+          refreshList();
+          renderSubjectsView();
+        };
+      });
+    }
+
+    // 2. Populate quick enroll select with available subjects from current branch/semester
+    const currentEnrolledIds = new Set(enrolled.map(s => s.id));
+    const availableToEnroll = subjects.filter(s => !currentEnrolledIds.has(s.id));
+
+    if (availableToEnroll.length === 0) {
+      quickSelect.innerHTML = `<option value="" disabled selected>All semester subjects enrolled</option>`;
+      quickBtn.disabled = true;
+    } else {
+      let options = `<option value="" disabled selected>-- Select to enroll --</option>`;
+      availableToEnroll.forEach(s => {
+        options += `<option value="${s.id}">${s.code} - ${s.name}</option>`;
+      });
+      quickSelect.innerHTML = options;
+      quickBtn.disabled = false;
+    }
+  };
+
+  // Initial list refresh
+  await refreshList();
+
+  // Quick enroll submit
+  quickBtn.onclick = () => {
+    const selectedId = quickSelect.value;
+    if (!selectedId) return;
+
+    // Remove from local removed list if it was a default subject
+    let removed = JSON.parse(localStorage.getItem(removedKey) || '[]');
+    if (removed.includes(selectedId)) {
+      removed = removed.filter(id => id !== selectedId);
+      localStorage.setItem(removedKey, JSON.stringify(removed));
+    }
+
+    refreshList();
+    renderSubjectsView();
+  };
+
+  // Close handlers
+  const closeModal = () => {
+    modal.style.display = 'none';
+  };
+
+  closeBtn.onclick = closeModal;
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+}
+
+// Function to handle Heatmap Analytics popup
+function openHeatmapAnalyticsModal() {
+  const modal = document.getElementById('heatmap-analytics-modal');
+  const closeBtn = document.getElementById('heatmap-close-btn');
+
+  if (!modal || !closeBtn) return;
+
+  // Show modal
+  modal.style.display = 'flex';
+
+  // Close handlers
+  const closeModal = () => {
+    modal.style.display = 'none';
+  };
+
+  closeBtn.onclick = closeModal;
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
   };
 }
 

@@ -246,6 +246,70 @@
       </div>
     </div>
 
+    <!-- Enrolled Subjects Modal -->
+    <div id="enrolled-subjects-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Enrolled Subjects Customizer</h3>
+          <button class="modal-close-btn" id="enrolled-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="modal-subjects-list" id="enrolled-subjects-list-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 8px;">
+            <!-- Rendered dynamically -->
+          </div>
+          
+          <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 8px;">
+            <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--text);">Quick Enroll Subject</h4>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select id="quick-enroll-select" class="custom-select" style="flex-grow: 1;"></select>
+              <button id="quick-enroll-btn" class="submit-btn" style="padding: 10px 20px; font-size: 0.9rem; margin: 0; white-space: nowrap;">
+                <span>Enroll</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap Analytics Modal -->
+    <div id="heatmap-analytics-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-card" style="max-width: 580px;">
+        <div class="modal-header">
+          <h3>Study Activity Analytics</h3>
+          <button class="modal-close-btn" id="heatmap-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 18px;">
+          <div class="analytics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+            <div class="dashboard-stat-card" style="flex-direction: column; padding: 14px; text-align: center;">
+              <span class="stat-number-val" style="font-size: 1.35rem; color: var(--primary);">32 Hours</span>
+              <span class="stat-label-text">Total Study Time</span>
+            </div>
+            <div class="dashboard-stat-card" style="flex-direction: column; padding: 14px; text-align: center;">
+              <span class="stat-number-val" style="font-size: 1.35rem; color: #34d399;">86%</span>
+              <span class="stat-label-text">Consistency Index</span>
+            </div>
+            <div class="dashboard-stat-card" style="flex-direction: column; padding: 14px; text-align: center;">
+              <span class="stat-number-val" style="font-size: 1.35rem; color: #60a5fa;">14 Days</span>
+              <span class="stat-label-text">Longest Study Streak</span>
+            </div>
+          </div>
+          
+          <div style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px;">
+            <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--text);">Weekly Study Hour Trend</h4>
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--subtext); margin-top: 10px;">
+              <span>Monday: 4.5h</span>
+              <span>Tuesday: 2.0h</span>
+              <span>Wednesday: 6.0h</span>
+              <span>Thursday: 1.5h</span>
+              <span>Friday: 3.5h</span>
+              <span>Saturday: 8.0h</span>
+              <span>Sunday: Rest</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Main Entry Module Script -->
     <script type="module" src="/js/app.js?v=1.0.1"></script>
