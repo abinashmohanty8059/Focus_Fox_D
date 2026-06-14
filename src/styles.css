@@ -2187,7 +2187,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 
 .algo-topics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -2195,17 +2195,17 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px 20px;
+  padding: 16px;
   cursor: pointer;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
   position: relative;
   overflow: hidden;
   transition: var(--transition-normal);
   box-shadow: var(--card-shadow);
-  min-height: 130px;
+  min-height: 88px;
 }
 
 .algo-topic-card::before {
@@ -2228,8 +2228,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 .algo-topic-card:active { transform: translateY(-1px) scale(0.99); }
 
 .algo-topic-icon {
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2239,8 +2239,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   flex-shrink: 0;
 }
 .algo-topic-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   stroke: currentColor;
 }
 .algo-topic-name {

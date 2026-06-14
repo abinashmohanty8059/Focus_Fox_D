@@ -2419,12 +2419,26 @@ async function renderAlgoTopicsView() {
   };
   const defaultIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
 
-  const cardsHtml = topics.map((topic) => {
-    const icon = topicIcons[topic] || defaultIcon;
+  const topicsData = await Promise.all(topics.map(async (topic) => {
+    const questions = await supabaseClient.getLeetcodeByTopic(topic);
+    const totalCount = questions.length;
+    const solvedCount = questions.filter(q => store.isQuestionSolved(q.id)).length;
+    return {
+      name: topic,
+      totalCount,
+      solvedCount
+    };
+  }));
+
+  const cardsHtml = topicsData.map((topic) => {
+    const icon = topicIcons[topic.name] || defaultIcon;
     return `
-      <div class="algo-topic-card fade-in" data-topic="${topic}">
+      <div class="algo-topic-card fade-in" data-topic="${topic.name}">
         <div class="algo-topic-icon">${icon}</div>
-        <div class="algo-topic-name">${topic}</div>
+        <div class="algo-topic-details" style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+          <div class="algo-topic-name">${topic.name}</div>
+          <div class="algo-topic-solved" style="font-size: 0.82rem; color: var(--subtext); font-weight: 600;">Solved: ${topic.solvedCount}/${topic.totalCount}</div>
+        </div>
         <div class="algo-topic-arrow">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="9 18 15 12 9 6"/>
@@ -2466,15 +2480,19 @@ async function renderAlgoQuestionsView() {
     if (qs.length === 0) {
       return `<div class="algo-col-empty"><span class="algo-diff-badge ${cls}">${label}</span><p>No ${label} questions yet</p></div>`;
     }
-    const rows = qs.map((q, i) => `
-      <div class="algo-question-row" data-id="${q.id}">
-        <span class="algo-q-num">${i + 1}</span>
-        <span class="algo-q-name">${q.question_name}</span>
-        <svg class="algo-q-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </div>
-    `).join('');
+    const rows = qs.map((q, i) => {
+      const isSolved = store.isQuestionSolved(q.id);
+      return `
+        <div class="algo-question-row" data-id="${q.id}" style="display: flex; align-items: center; gap: 12px; padding: 12px 20px;">
+          <input type="checkbox" class="algo-q-checkbox" data-id="${q.id}" ${isSolved ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);" />
+          <span class="algo-q-num" style="margin-left: 4px;">${i + 1}</span>
+          <span class="algo-q-name" style="${isSolved ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${q.question_name}</span>
+          <svg class="algo-q-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      `;
+    }).join('');
     return `
       <div class="algo-diff-header">
         <span class="algo-diff-badge ${cls}">${label}</span>
@@ -2494,11 +2512,24 @@ async function renderAlgoQuestionsView() {
 
   // Attach click — show popup
   document.querySelectorAll('.algo-question-row').forEach(row => {
-    row.addEventListener('click', () => {
+    row.addEventListener('click', (e) => {
+      if (e.target.classList.contains('algo-q-checkbox')) return;
       const qId = row.getAttribute('data-id');
       const q = questions.find(x => x.id === qId);
       showAlgoQuestionPopup(q);
     });
+
+    const checkbox = row.querySelector('.algo-q-checkbox');
+    if (checkbox) {
+      checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      checkbox.addEventListener('change', () => {
+        const qId = checkbox.getAttribute('data-id');
+        store.toggleQuestionSolved(qId);
+        renderAlgoQuestionsView();
+      });
+    }
   });
 }
 
