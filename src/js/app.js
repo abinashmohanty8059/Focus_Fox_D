@@ -482,8 +482,8 @@ async function renderPdfView() {
     return;
   }
   viewContainer.innerHTML = `
-    <div class="pdf-iframe-container fade-in" style="width: 100%; height: 100%; background-color: #525659; position: relative; overflow: hidden; display: flex; flex-direction: column;">
-      <iframe src="https://drive.google.com/file/d/${file.id}/preview" frameborder="0" allow="autoplay" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+    <div class="pdf-iframe-container fade-in">
+      <iframe src="https://drive.google.com/file/d/${file.id}/preview" frameborder="0" allow="autoplay"></iframe>
     </div>
   `;
 }
@@ -712,7 +712,7 @@ async function renderSubjectsView() {
             <span>${percentage}% (${completedCount}/${totalTopics} Topics)</span>
           </div>
           <div class="subject-progress-bar-bg">
-            <div class="subject-progress-bar-fill" style="width: ${percentage}%"></div>
+            <div class="subject-progress-bar-fill" data-percentage="${percentage}"></div>
           </div>
         </div>
       </div>
@@ -727,6 +727,12 @@ async function renderSubjectsView() {
       ${subjectCardsHtml.join('')}
     </div>
   `;
+
+  // Set progress bar widths programmatically to comply with CSP on inline styles
+  viewContainer.querySelectorAll('.subject-progress-bar-fill').forEach(fill => {
+    const pct = fill.getAttribute('data-percentage');
+    fill.style.width = pct + '%';
+  });
 
   // Attach card click handlers
   document.querySelectorAll('.subject-card').forEach(card => {
@@ -805,7 +811,7 @@ async function renderSyllabusView() {
           
           <div class="syllabus-row-progress-container">
             <div class="syllabus-row-progress-bar-bg">
-              <div class="syllabus-row-progress-bar-fill" style="width: ${percentage}%"></div>
+              <div class="syllabus-row-progress-bar-fill" data-percentage="${percentage}"></div>
             </div>
             <div class="syllabus-row-progress-text">
               <span>${percentage}% (${completedCount}/${totalTopics} Topics)</span>
@@ -837,6 +843,12 @@ async function renderSyllabusView() {
       </div>
     </div>
   `;
+
+  // Set progress bar widths programmatically to comply with CSP on inline styles
+  viewContainer.querySelectorAll('.syllabus-row-progress-bar-fill').forEach(fill => {
+    const pct = fill.getAttribute('data-percentage');
+    fill.style.width = pct + '%';
+  });
 
   // Attach card click handlers to navigate to the subject dashboard
   viewContainer.querySelectorAll('.syllabus-row-card').forEach(card => {
@@ -995,13 +1007,13 @@ async function renderTopicsTab(container) {
                 <div class="importance-row">
                   <span class="importance-urgency-text">${urgencyText}</span>
                   <div class="importance-bar">
-                    <div class="importance-fill" style="width: ${percentage}%; background-color: ${barColor};"></div>
+                    <div class="importance-fill" data-percentage="${percentage}" data-color="${barColor}"></div>
                   </div>
                 </div>
               </div>
             </div>
             <div class="topic-actions">
-              <div class="importance-percentage-badge" style="color: ${barColor};">${percentage}%</div>
+              <div class="importance-percentage-badge" data-color="${barColor}">${percentage}%</div>
               <svg class="topic-chevron" viewBox="0 0 24 24">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -1046,6 +1058,18 @@ async function renderTopicsTab(container) {
       ${controlsHtml}
       <div class="topics-list">${topicsHtml}</div>
     `;
+
+    // Set importance bar widths and colors programmatically to comply with CSP on inline styles
+    container.querySelectorAll('.importance-fill').forEach(fill => {
+      const pct = fill.getAttribute('data-percentage');
+      const color = fill.getAttribute('data-color');
+      fill.style.width = pct + '%';
+      fill.style.backgroundColor = color;
+    });
+
+    container.querySelectorAll('.importance-percentage-badge').forEach(badge => {
+      badge.style.color = badge.getAttribute('data-color');
+    });
 
     // Bind accordion click handlers
     container.querySelectorAll('.topic-header').forEach(header => {
@@ -2080,14 +2104,14 @@ async function renderAlgoSolutionView() {
           let complexityHtml = '';
           if (activeSol.time_complexity && activeSol.time_complexity.trim() !== '') {
             complexityHtml += `
-              <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+              <span class="algo-sol-complexity-badge">
                 Time: <strong>${escapeHtml(activeSol.time_complexity)}</strong>
               </span>
             `;
           }
           if (activeSol.space_complexity && activeSol.space_complexity.trim() !== '') {
             complexityHtml += `
-              <span class="algo-sol-topic" style="background: rgba(var(--primary-rgb), 0.08); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.25); padding: 4px 12px; border-radius: 30px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+              <span class="algo-sol-complexity-badge">
                 Space: <strong>${escapeHtml(activeSol.space_complexity)}</strong>
               </span>
             `;

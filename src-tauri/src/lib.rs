@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -102,16 +103,42 @@ async fn supabase_request(url: String, key: String, endpoint: String) -> Result<
 }
 
 #[tauri::command]
-fn list_music_files() -> Result<Vec<String>, String> {
+fn list_music_files(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     let mut files = Vec::new();
-    // Prioritize project root "music" directory (../music relative to src-tauri)
-    let mut music_dir = std::path::PathBuf::from("../music");
-    if !music_dir.exists() {
-        music_dir = std::path::PathBuf::from("music");
-        if !music_dir.exists() {
-            let _ = fs::create_dir_all(&music_dir);
+    
+    // 1. Resolve path using Tauri's resource_dir (points to bundled resources)
+    let mut music_dir = None;
+    if let Ok(res_dir) = app.path().resource_dir() {
+        let bundled_music = res_dir.join("music");
+        if bundled_music.exists() {
+            music_dir = Some(bundled_music);
         }
     }
+    
+    // 2. Fallback to developer/development paths
+    let music_dir = match music_dir {
+        Some(path) => path,
+        None => {
+            let mut path = std::path::PathBuf::from("../music");
+            if !path.exists() {
+                path = std::path::PathBuf::from("music");
+            }
+            if !path.exists() {
+                if let Ok(exe_path) = std::env::current_exe() {
+                    if let Some(exe_dir) = exe_path.parent() {
+                        let exe_music = exe_dir.join("music");
+                        if exe_music.exists() {
+                            path = exe_music;
+                        }
+                    }
+                }
+            }
+            if !path.exists() {
+                let _ = fs::create_dir_all(&path);
+            }
+            path
+        }
+    };
     
     if let Ok(entries) = fs::read_dir(&music_dir) {
         for entry in entries {
