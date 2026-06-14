@@ -2527,7 +2527,17 @@ async function renderAlgoQuestionsView() {
       checkbox.addEventListener('change', () => {
         const qId = checkbox.getAttribute('data-id');
         store.toggleQuestionSolved(qId);
-        renderAlgoQuestionsView();
+        
+        const qNameSpan = row.querySelector('.algo-q-name');
+        if (qNameSpan) {
+          if (checkbox.checked) {
+            qNameSpan.style.textDecoration = 'line-through';
+            qNameSpan.style.opacity = '0.6';
+          } else {
+            qNameSpan.style.textDecoration = 'none';
+            qNameSpan.style.opacity = '1';
+          }
+        }
       });
     }
   });

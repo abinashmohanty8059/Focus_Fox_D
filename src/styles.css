@@ -2195,17 +2195,17 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 20px 24px;
   cursor: pointer;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   position: relative;
   overflow: hidden;
   transition: var(--transition-normal);
   box-shadow: var(--card-shadow);
-  min-height: 88px;
+  min-height: 112px;
 }
 
 .algo-topic-card::before {
@@ -2228,19 +2228,19 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 .algo-topic-card:active { transform: translateY(-1px) scale(0.99); }
 
 .algo-topic-icon {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary);
   background: rgba(var(--primary-rgb), 0.1);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 .algo-topic-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   stroke: currentColor;
 }
 .algo-topic-name {
@@ -2331,6 +2331,53 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 .algo-diff-badge.badge-medium,
 .algo-diff-badge.badge-hard {
   /* inherited */
+}
+
+.algo-q-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface);
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.algo-q-checkbox:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.algo-q-checkbox:checked::after {
+  content: '';
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+/* For dark theme: keep checkbox background as black and tick as white */
+[data-theme="dark"] .algo-q-checkbox {
+  background-color: #0c0a1c;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .algo-q-checkbox:checked {
+  background-color: #000000;
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .algo-q-checkbox:checked::after {
+  border-color: #ffffff;
 }
 
 .algo-question-list {
