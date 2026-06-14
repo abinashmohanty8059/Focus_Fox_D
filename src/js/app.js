@@ -323,15 +323,11 @@ function updateHeader(view, data) {
     headerTitleText.textContent = "Academic Selection";
     headerSubtitleText.textContent = "Select your branch and semester to get started";
   } else if (view === 'subjects') {
-    headerTitleText.textContent = "Good Evening, Abinash 👋";
-    headerSubtitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} • Semester ${store.selectedSemester}` : "Subjects";
-    if (searchContainer) searchContainer.style.display = 'flex';
-    if (notifBtn) notifBtn.style.display = 'flex';
-    if (profile) {
-      profile.style.display = 'flex';
-      const fallback = profile.querySelector('.profile-avatar-fallback');
-      if (fallback) fallback.textContent = 'A';
-    }
+    headerTitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} • Semester ${store.selectedSemester}` : "Subjects";
+    headerSubtitleText.textContent = "";
+    if (searchContainer) searchContainer.style.display = 'none';
+    if (notifBtn) notifBtn.style.display = 'none';
+    if (profile) profile.style.display = 'none';
   } else if (view === 'syllabus') {
     headerTitleText.textContent = "Syllabus";
     headerSubtitleText.textContent = store.selectedBranch ? `${store.selectedBranch.name} Curriculum` : "Sequential subject tracker";
@@ -945,10 +941,7 @@ async function renderSubjectsView() {
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
 
-        <div class="subject-card-header">
-          <div class="subject-icon-box">
-            ${subj.iconSvg}
-          </div>
+        <div class="subject-card-header" style="justify-content: flex-end; margin-bottom: 0;">
           <button class="subject-options-btn" title="Options">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
           </button>

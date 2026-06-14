@@ -3822,7 +3822,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   position: relative;
   transition: var(--transition-normal);
   cursor: pointer;
-  min-height: 240px;
+  min-height: 160px;
 }
 
 .subject-card-v2:hover {
@@ -4098,7 +4098,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 160px;
   cursor: pointer;
   transition: var(--transition-normal);
   color: var(--subtext);
