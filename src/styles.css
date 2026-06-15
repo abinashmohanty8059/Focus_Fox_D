@@ -2641,6 +2641,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   padding: 16px 24px;
   background: rgba(var(--primary-rgb), 0.03);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .custom-sol-tabs {
@@ -2698,11 +2699,11 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 }
 
 .custom-sol-body {
-  display: flex;
-  flex-direction: column;
+  display: block;
   padding: 24px;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .custom-sol-heading {

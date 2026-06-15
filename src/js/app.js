@@ -2844,7 +2844,7 @@ async function renderAlgoSolutionView() {
           Question
         </button>
 
-        <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative; min-width: 0;">
+        <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative; min-width: 0; min-height: 0; overflow:hidden;">
           <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
             <div class="spinner"></div>
             <p style="color:var(--primary);font-weight:600;margin-top:16px;">Checking for solutions...</p>
@@ -2942,7 +2942,9 @@ async function renderAlgoSolutionView() {
 
   panelClose?.addEventListener('click', () => {
     questionPanel.classList.remove('open');
+    questionPanel.style.width = ''; // Clear inline width from resizer
     panelToggle.style.display = '';
+    resizer.classList.remove('active');
   });
 
   const contentArea = document.getElementById('algo-sol-content-area');
@@ -2968,7 +2970,7 @@ async function renderAlgoSolutionView() {
 
       // Render static container once
       contentArea.innerHTML = `
-        <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1;">
+        <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1; min-height:0;">
           <div class="custom-sol-header-bar">
             <div class="custom-sol-tabs" id="custom-sol-lang-tabs">
               ${languages.map(lang => `
@@ -3009,7 +3011,7 @@ async function renderAlgoSolutionView() {
               </button>
             </div>
           </div>
-          <div class="custom-sol-body">
+          <div class="custom-sol-body" style="flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb), 0.2) transparent;">
             <div class="custom-sol-title-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
               <h3 class="custom-sol-heading" id="custom-sol-title" style="margin-bottom: 0;"></h3>
               <div class="custom-sol-sub-tabs" id="custom-sol-sub-tabs"></div>
