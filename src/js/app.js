@@ -2970,7 +2970,7 @@ async function renderAlgoSolutionView() {
 
       // Render static container once
       contentArea.innerHTML = `
-        <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+        <div class="custom-solution-container" style="display:flex; flex-direction:column; flex:1; min-height:0; scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb), 0.2) transparent;">
           <div class="custom-sol-header-bar">
             <div class="custom-sol-tabs" id="custom-sol-lang-tabs">
               ${languages.map(lang => `
@@ -3011,7 +3011,7 @@ async function renderAlgoSolutionView() {
               </button>
             </div>
           </div>
-          <div class="custom-sol-body" style="flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; scrollbar-width:thin; scrollbar-color:rgba(var(--primary-rgb), 0.2) transparent;">
+          <div class="custom-sol-body" style="padding:20px;">
             <div class="custom-sol-title-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
               <h3 class="custom-sol-heading" id="custom-sol-title" style="margin-bottom: 0;"></h3>
               <div class="custom-sol-sub-tabs" id="custom-sol-sub-tabs"></div>

@@ -2631,7 +2631,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   border-radius: var(--radius-lg);
   box-shadow: var(--card-shadow);
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .custom-sol-header-bar {
@@ -2702,7 +2703,6 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   display: block;
   padding: 24px;
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
 }
 
