@@ -4459,5 +4459,113 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 }
 
 
+/* ============================================================
+   LEETCODE QUESTION READER — Native content styling
+   ============================================================ */
 
+.lc-question-content {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.lc-question-content p {
+  margin: 12px 0;
+}
+
+.lc-question-content strong,
+.lc-question-content b {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lc-question-content em,
+.lc-question-content i {
+  font-style: italic;
+}
+
+.lc-question-content code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.85em;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.lc-question-content pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  color: var(--text);
+  margin: 14px 0;
+}
+
+.lc-question-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  white-space: pre;
+}
+
+.lc-question-content ul,
+.lc-question-content ol {
+  padding-left: 28px;
+  margin: 10px 0;
+}
+
+.lc-question-content li {
+  margin: 6px 0;
+}
+
+.lc-question-content img {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  margin: 12px 0;
+}
+
+.lc-question-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: rgba(var(--primary-rgb), 0.3);
+  transition: var(--transition-fast);
+}
+
+.lc-question-content a:hover {
+  text-decoration-color: var(--primary);
+}
+
+/* Example / Constraints sections */
+.lc-question-content .example-block,
+.lc-question-content div[class*="example"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin: 14px 0;
+}
+
+/* Hints section */
+.lc-hints-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.lc-hints-section summary::before {
+  content: '▶';
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.2s ease;
+  font-size: 0.7rem;
+}
+
+.lc-hints-section[open] summary::before {
+  transform: rotate(90deg);
+}
 

@@ -365,6 +365,9 @@ function updateHeader(view, data) {
     } else {
       headerSubtitleText.textContent = "Solution walkthrough";
     }
+  } else if (view === 'leetcode-webview') {
+    headerTitleText.textContent = q ? q.question_name : "LeetCode";
+    headerSubtitleText.textContent = "In-app LeetCode Browser";
   }
 
   // View on LeetCode button visibility in header
@@ -449,8 +452,8 @@ function handleHeaderFilterChange() {
 
 // Dispatch to individual view renderers
 async function renderView(view, data) {
-  // Toggle padding class for fullscreen PDF preview
-  if (view === 'pdf-viewer') {
+  // Toggle padding class for fullscreen views (PDF preview, LeetCode webview)
+  if (view === 'pdf-viewer' || view === 'leetcode-webview') {
     viewContainer.classList.add('no-padding');
   } else {
     viewContainer.classList.remove('no-padding');
@@ -493,6 +496,9 @@ async function renderView(view, data) {
         break;
       case 'algo-solution':
         await renderAlgoSolutionView();
+        break;
+      case 'leetcode-webview':
+        renderLeetcodeWebview();
         break;
       default:
         viewContainer.innerHTML = `<div>View "${view}" not found.</div>`;
@@ -2778,17 +2784,13 @@ function showAlgoQuestionPopup(q) {
   });
   document.getElementById('algo-popup-close').addEventListener('click', () => overlay.remove());
 
-  // View Question — open LeetCode link
+  // View Question — open LeetCode in in-app webview
   document.getElementById('algo-btn-view-q').addEventListener('click', () => {
     if (hasLink) {
-      if (window.__TAURI__) {
-        invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
-          console.error("Failed to open URL via Tauri opener:", err);
-          window.open(q.question_link, '_blank');
-        });
-      } else {
-        window.open(q.question_link, '_blank');
-      }
+      store.algoSelectedQuestion = q;
+      store.leetcodeUrl = q.question_link;
+      overlay.remove();
+      store.navigateTo('leetcode-webview');
     }
   });
 
@@ -3093,6 +3095,156 @@ async function renderAlgoSolutionView() {
         <p style="font-size:0.8rem;color:var(--accent);">${error.message || ''}</p>
       </div>
     `;
+  }
+}
+
+// 6d. In-App LeetCode Question Reader (native render via GraphQL)
+async function renderLeetcodeWebview() {
+  const url = store.leetcodeUrl;
+  const q = store.algoSelectedQuestion;
+
+  if (!url) {
+    viewContainer.innerHTML = `
+      <div class="selection-card fade-in" style="text-align:center; max-width:500px;">
+        <h3>No URL Provided</h3>
+        <p style="color:var(--subtext);margin-top:12px;">Could not load the LeetCode question. Please go back and try again.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Extract title-slug from URL (e.g. "missing-number" from ".../problems/missing-number/")
+  const slugMatch = url.match(/problems\/([^/?#]+)/);
+  const titleSlug = slugMatch ? slugMatch[1] : '';
+
+  if (!titleSlug) {
+    viewContainer.innerHTML = `
+      <div class="selection-card fade-in" style="text-align:center; max-width:500px;">
+        <h3>Invalid URL</h3>
+        <p style="color:var(--subtext);margin-top:12px;">Could not extract problem slug from: ${url}</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Show loading state
+  viewContainer.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; gap:16px;">
+      <div class="spinner"></div>
+      <p style="color:var(--primary); font-weight:600; font-size:0.95rem;">Fetching question from LeetCode...</p>
+    </div>
+  `;
+
+  try {
+    // Fetch question content via Rust backend (bypasses CORS)
+    const data = await invoke('fetch_leetcode_question', { titleSlug });
+
+    if (!data || !data.content) {
+      throw new Error('No content returned from LeetCode API');
+    }
+
+    const diffLower = (data.difficulty || '').toLowerCase();
+    const diffClass = diffLower === 'easy' ? 'badge-easy' 
+                    : diffLower === 'medium' ? 'badge-medium' 
+                    : diffLower === 'hard' ? 'badge-hard'
+                    : 'badge-easy';
+
+    const topicTagsHtml = (data.topicTags || []).map(t =>
+      `<span style="background:var(--bg); border:1px solid var(--border); padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600; color:var(--subtext);">${t.name}</span>`
+    ).join('');
+
+    const hintsHtml = (data.hints && data.hints.length > 0) ? `
+      <details class="lc-hints-section" style="margin-top:24px; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden;">
+        <summary style="padding:14px 20px; cursor:pointer; font-weight:700; font-size:0.9rem; color:var(--text); background:var(--bg); user-select:none; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Hints (${data.hints.length})
+        </summary>
+        <div style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
+          ${data.hints.map((h, i) => `
+            <div style="padding:12px 16px; background:var(--bg); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--text); line-height:1.6;">
+              <span style="font-weight:700; color:var(--primary); margin-right:6px;">Hint ${i+1}:</span>
+              ${h}
+            </div>
+          `).join('')}
+        </div>
+      </details>
+    ` : '';
+
+    viewContainer.innerHTML = `
+      <div class="lc-reader-container fade-in" style="max-width:820px; margin:0 auto; padding:32px 24px;">
+        <!-- Header bar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px;">
+          <button id="lc-back-btn" style="display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button id="lc-open-external" style="display:flex; align-items:center; gap:6px; background:var(--primary); border:none; border-radius:var(--radius-sm); padding:8px 16px; color:#fff; cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open on LeetCode
+          </button>
+        </div>
+
+        <!-- Title + metadata -->
+        <div style="margin-bottom:24px;">
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 12px 0; line-height:1.3;">
+            ${data.questionFrontendId ? data.questionFrontendId + '. ' : ''}${data.title}
+          </h1>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="algo-diff-badge ${diffClass}" style="padding:3px 12px; font-size:0.76rem;">${data.difficulty}</span>
+            ${topicTagsHtml}
+          </div>
+        </div>
+
+        <!-- Question content (LeetCode HTML) -->
+        <div class="lc-question-content" style="font-size:0.92rem; line-height:1.8; color:var(--text);">
+          ${data.content}
+        </div>
+
+        ${hintsHtml}
+      </div>
+    `;
+
+    // Back button
+    document.getElementById('lc-back-btn')?.addEventListener('click', () => {
+      store.goBack();
+    });
+
+    // Open in external browser
+    document.getElementById('lc-open-external')?.addEventListener('click', () => {
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url }).catch(err => {
+          console.error("Failed to open URL via Tauri opener:", err);
+          window.open(url, '_blank');
+        });
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+
+  } catch (err) {
+    console.error('Failed to fetch LeetCode question:', err);
+    viewContainer.innerHTML = `
+      <div class="selection-card fade-in" style="text-align:center; max-width:600px;">
+        <h3 style="color:var(--accent); margin-bottom:12px;">Failed to Load Question</h3>
+        <p style="color:var(--subtext); margin-bottom:16px;">${err.message || err}</p>
+        <p style="color:var(--subtext); font-size:0.85rem; margin-bottom:20px;">Try opening it directly on LeetCode instead:</p>
+        <button id="lc-fallback-open" style="background:var(--primary); border:none; border-radius:var(--radius-sm); padding:10px 20px; color:#fff; cursor:pointer; font-size:0.88rem; font-weight:600; font-family:var(--font-sans);">
+          Open on LeetCode ↗
+        </button>
+        <br><br>
+        <button id="lc-fallback-back" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans);">
+          Go Back
+        </button>
+      </div>
+    `;
+    document.getElementById('lc-fallback-open')?.addEventListener('click', () => {
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url }).catch(() => window.open(url, '_blank'));
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+    document.getElementById('lc-fallback-back')?.addEventListener('click', () => store.goBack());
   }
 }
 

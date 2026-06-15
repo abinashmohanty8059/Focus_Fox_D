@@ -169,11 +169,50 @@ fn list_music_files(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     Ok(files)
 }
 
+#[tauri::command]
+async fn fetch_leetcode_question(title_slug: String) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::new();
+
+    let query = serde_json::json!({
+        "query": "query questionData($titleSlug: String!) { question(titleSlug: $titleSlug) { questionId questionFrontendId title content difficulty topicTags { name slug } hints exampleTestcaseList } }",
+        "variables": { "titleSlug": title_slug }
+    });
+
+    let res = client
+        .post("https://leetcode.com/graphql")
+        .header("Content-Type", "application/json")
+        .header("Referer", "https://leetcode.com")
+        .json(&query)
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {}", e))?;
+
+    let status = res.status();
+    if !status.is_success() {
+        let err_text = res.text().await.unwrap_or_default();
+        return Err(format!("LeetCode API returned {}: {}", status, err_text));
+    }
+
+    let json = res
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| format!("Parse error: {}", e))?;
+
+    // Extract the question object from the response
+    let question = json
+        .get("data")
+        .and_then(|d| d.get("question"))
+        .cloned()
+        .ok_or_else(|| "No question data in response".to_string())?;
+
+    Ok(question)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, load_env, supabase_request, list_music_files])
+        .invoke_handler(tauri::generate_handler![greet, load_env, supabase_request, list_music_files, fetch_leetcode_question])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
