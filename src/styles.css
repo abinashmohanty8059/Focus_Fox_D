@@ -4797,3 +4797,126 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   height: 14px;
 }
 
+/* ============================================================
+   SOLUTION PANEL RESIZER
+   ============================================================ */
+
+.sol-layout-with-panel {
+  position: relative;
+}
+
+.sol-layout-with-panel.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.sol-panel-resizer {
+  width: 8px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 20;
+  position: relative;
+  display: none;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.sol-panel-resizer.active {
+  display: block;
+}
+
+.sol-panel-resizer:hover,
+.sol-layout-with-panel.is-resizing .sol-panel-resizer {
+  background: rgba(var(--primary-rgb), 0.3);
+}
+
+.sol-panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 30px;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+.sol-panel-resizer:hover::after,
+.sol-layout-with-panel.is-resizing .sol-panel-resizer::after {
+  background: var(--primary);
+}
+
+/* ============================================================
+   SOLUTION OPEN LEETCODE BUTTON (GREEN)
+   ============================================================ */
+
+.sol-panel-open-lc-btn {
+  background: #10b981; /* Green */
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition-fast);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.sol-panel-open-lc-btn:hover {
+  background: #059669; /* Darker Green */
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   RESPONSIVE THEME DROPDOWN
+   ============================================================ */
+
+.custom-sol-theme-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-sol-theme-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.custom-sol-theme-dropdown {
+  display: none;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+}
+
+/* We use a container query on the content area to collapse the header */
+.algo-solution-content-area {
+  container-type: inline-size;
+  container-name: sol-content;
+}
+
+@container sol-content (max-width: 650px) {
+  .custom-sol-theme-buttons {
+    display: none;
+  }
+  .custom-sol-theme-dropdown {
+    display: block;
+  }
+  .custom-sol-header-bar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+

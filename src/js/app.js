@@ -2809,14 +2809,16 @@ async function renderAlgoSolutionView() {
 
   const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
 
-  // Render main layout skeleton with collapsible question panel
+  // Render main layout skeleton with collapsible question panel and resizer
   viewContainer.innerHTML = `
-    <div class="sol-layout-with-panel">
+    <div class="sol-layout-with-panel" id="sol-layout-container">
       <!-- Collapsible Question Panel (hidden by default) -->
       <div class="sol-question-panel" id="sol-question-panel">
-        <div class="sol-question-panel-header">
-          <h3>📋 ${q.question_name}</h3>
-          <button class="sol-panel-close-btn" id="sol-panel-close" title="Close question panel">
+        <div class="sol-question-panel-header" style="justify-content: flex-end;">
+          <button class="sol-panel-open-lc-btn" id="sol-panel-open-lc" title="Open on LeetCode">
+            Open on LeetCode ↗
+          </button>
+          <button class="sol-panel-close-btn" id="sol-panel-close" title="Close question panel" style="margin-left: 12px;">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -2831,6 +2833,9 @@ async function renderAlgoSolutionView() {
         </div>
       </div>
 
+      <!-- Resizer Handle -->
+      <div class="sol-panel-resizer" id="sol-panel-resizer"></div>
+
       <!-- Solution content area -->
       <div class="sol-content-area" id="sol-content-area">
         <!-- Toggle tab to open question panel -->
@@ -2839,7 +2844,7 @@ async function renderAlgoSolutionView() {
           Question
         </button>
 
-        <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
+        <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative; min-width: 0;">
           <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
             <div class="spinner"></div>
             <p style="color:var(--primary);font-weight:600;margin-top:16px;">Checking for solutions...</p>
@@ -2849,17 +2854,59 @@ async function renderAlgoSolutionView() {
     </div>
   `;
 
-  // Wire up the question panel toggle
+  // Wire up the question panel toggle & resizer
   const questionPanel = document.getElementById('sol-question-panel');
   const panelToggle = document.getElementById('sol-panel-toggle');
   const panelClose = document.getElementById('sol-panel-close');
   const panelBody = document.getElementById('sol-panel-body');
+  const openLcBtn = document.getElementById('sol-panel-open-lc');
+  const resizer = document.getElementById('sol-panel-resizer');
+  const layoutContainer = document.getElementById('sol-layout-container');
 
   let panelContentLoaded = false;
+  let isResizing = false;
+
+  openLcBtn?.addEventListener('click', () => {
+    if (q.question_link) {
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url: q.question_link }).catch(err => {
+          console.error("Failed to open URL via Tauri opener:", err);
+          window.open(q.question_link, '_blank');
+        });
+      } else {
+        window.open(q.question_link, '_blank');
+      }
+    }
+  });
+
+  // Resizing Logic
+  resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    layoutContainer.classList.add('is-resizing');
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const containerRect = layoutContainer.getBoundingClientRect();
+    let newWidth = e.clientX - containerRect.left;
+    // Constrain width
+    if (newWidth < 300) newWidth = 300;
+    if (newWidth > containerRect.width - 300) newWidth = containerRect.width - 300;
+    questionPanel.style.width = newWidth + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isResizing) {
+      isResizing = false;
+      layoutContainer.classList.remove('is-resizing');
+    }
+  });
 
   panelToggle?.addEventListener('click', () => {
     questionPanel.classList.add('open');
+    questionPanel.style.width = '48%'; // Reset to default when opening
     panelToggle.style.display = 'none';
+    resizer.classList.add('active');
 
     // Lazy-load question content on first open
     if (!panelContentLoaded && q.question_link) {
@@ -2933,14 +2980,26 @@ async function renderAlgoSolutionView() {
             
             <div class="custom-sol-theme-selector">
               <span style="font-size:0.75rem; font-weight:600; color:var(--subtext); margin-right:4px;">Theme:</span>
-              <button class="custom-sol-theme-btn theme-btn-one-dark ${selectedTheme === 'one-dark' ? 'active' : ''}" data-theme="one-dark" title="One Dark"></button>
-              <button class="custom-sol-theme-btn theme-btn-monokai ${selectedTheme === 'monokai' ? 'active' : ''}" data-theme="monokai" title="Monokai"></button>
-              <button class="custom-sol-theme-btn theme-btn-dracula ${selectedTheme === 'dracula' ? 'active' : ''}" data-theme="dracula" title="Dracula"></button>
-              <button class="custom-sol-theme-btn theme-btn-nord ${selectedTheme === 'nord' ? 'active' : ''}" data-theme="nord" title="Nord"></button>
-              <button class="custom-sol-theme-btn theme-btn-cyberpunk ${selectedTheme === 'cyberpunk' ? 'active' : ''}" data-theme="cyberpunk" title="Cyberpunk"></button>
-              <button class="custom-sol-theme-btn theme-btn-solarized-dark ${selectedTheme === 'solarized-dark' ? 'active' : ''}" data-theme="solarized-dark" title="Solarized Dark"></button>
-              <button class="custom-sol-theme-btn theme-btn-winter-blue ${selectedTheme === 'winter-blue' ? 'active' : ''}" data-theme="winter-blue" title="Winter Blue"></button>
-              <button class="custom-sol-theme-btn theme-btn-github-light ${selectedTheme === 'github-light' ? 'active' : ''}" data-theme="github-light" title="GitHub Light"></button>
+              <div class="custom-sol-theme-buttons">
+                <button class="custom-sol-theme-btn theme-btn-one-dark ${selectedTheme === 'one-dark' ? 'active' : ''}" data-theme="one-dark" title="One Dark"></button>
+                <button class="custom-sol-theme-btn theme-btn-monokai ${selectedTheme === 'monokai' ? 'active' : ''}" data-theme="monokai" title="Monokai"></button>
+                <button class="custom-sol-theme-btn theme-btn-dracula ${selectedTheme === 'dracula' ? 'active' : ''}" data-theme="dracula" title="Dracula"></button>
+                <button class="custom-sol-theme-btn theme-btn-nord ${selectedTheme === 'nord' ? 'active' : ''}" data-theme="nord" title="Nord"></button>
+                <button class="custom-sol-theme-btn theme-btn-cyberpunk ${selectedTheme === 'cyberpunk' ? 'active' : ''}" data-theme="cyberpunk" title="Cyberpunk"></button>
+                <button class="custom-sol-theme-btn theme-btn-solarized-dark ${selectedTheme === 'solarized-dark' ? 'active' : ''}" data-theme="solarized-dark" title="Solarized Dark"></button>
+                <button class="custom-sol-theme-btn theme-btn-winter-blue ${selectedTheme === 'winter-blue' ? 'active' : ''}" data-theme="winter-blue" title="Winter Blue"></button>
+                <button class="custom-sol-theme-btn theme-btn-github-light ${selectedTheme === 'github-light' ? 'active' : ''}" data-theme="github-light" title="GitHub Light"></button>
+              </div>
+              <select class="custom-sol-theme-dropdown" id="custom-sol-theme-dropdown">
+                <option value="one-dark" ${selectedTheme === 'one-dark' ? 'selected' : ''}>One Dark</option>
+                <option value="monokai" ${selectedTheme === 'monokai' ? 'selected' : ''}>Monokai</option>
+                <option value="dracula" ${selectedTheme === 'dracula' ? 'selected' : ''}>Dracula</option>
+                <option value="nord" ${selectedTheme === 'nord' ? 'selected' : ''}>Nord</option>
+                <option value="cyberpunk" ${selectedTheme === 'cyberpunk' ? 'selected' : ''}>Cyberpunk</option>
+                <option value="solarized-dark" ${selectedTheme === 'solarized-dark' ? 'selected' : ''}>Solarized Dark</option>
+                <option value="winter-blue" ${selectedTheme === 'winter-blue' ? 'selected' : ''}>Winter Blue</option>
+                <option value="github-light" ${selectedTheme === 'github-light' ? 'selected' : ''}>GitHub Light</option>
+              </select>
             </div>
 
             <div class="custom-sol-actions">
@@ -3094,10 +3153,32 @@ async function renderAlgoSolutionView() {
             }
           });
           
-          // Update data-code-theme attribute
-          codeWrapperEl.setAttribute('data-code-theme', selectedTheme);
+          // Sync dropdown
+          const dropdown = document.getElementById('custom-sol-theme-dropdown');
+          if (dropdown) dropdown.value = selectedTheme;
+
+          document.getElementById('custom-sol-code-wrapper').setAttribute('data-code-theme', selectedTheme);
         });
       });
+
+      // Theme dropdown change listener
+      const themeDropdown = document.getElementById('custom-sol-theme-dropdown');
+      if (themeDropdown) {
+        themeDropdown.addEventListener('change', (e) => {
+          selectedTheme = e.target.value;
+          
+          // Sync buttons
+          contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(b => {
+            if (b.getAttribute('data-theme') === selectedTheme) {
+              b.classList.add('active');
+            } else {
+              b.classList.remove('active');
+            }
+          });
+
+          document.getElementById('custom-sol-code-wrapper').setAttribute('data-code-theme', selectedTheme);
+        });
+      }
 
       // Initial Render
       updateCodeDisplay();
