@@ -59,6 +59,26 @@
   --glass-border: rgba(192, 166, 255, 0.15);
 }
 
+body.jellyfish-active[data-theme="dark"] {
+  --bg: transparent;
+  --surface: rgba(37, 30, 78, 0.4);
+  --sidebar-bg: rgba(37, 30, 78, 0.4);
+  --header-bg: rgba(23, 19, 48, 0.4);
+}
+
+.jellyfish-video-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+
 /* Global Reset */
 * {
   box-sizing: border-box;

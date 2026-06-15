@@ -18,6 +18,7 @@ export const store = {
   completedTopics: [],
   solvedQuestions: [],
   theme: 'light',
+  jellyfishMode: false,
 
   init() {
     // Load theme
@@ -42,12 +43,48 @@ export const store = {
     if (savedSemester) {
       this.selectedSemester = parseInt(savedSemester, 10);
     }
+
+    const savedJellyfish = localStorage.getItem('focus_fox_jellyfish');
+    if (savedJellyfish) {
+      this.jellyfishMode = savedJellyfish === 'true';
+    }
+    this.applyJellyfish();
   },
 
   setTheme(newTheme) {
     this.theme = newTheme;
     localStorage.setItem('focus_fox_theme', newTheme);
     this.applyTheme();
+    this.applyJellyfish();
+  },
+
+  setJellyfishMode(enabled) {
+    this.jellyfishMode = enabled;
+    localStorage.setItem('focus_fox_jellyfish', enabled);
+    this.applyJellyfish();
+  },
+
+  applyJellyfish() {
+    let videoBg = document.getElementById('jellyfish-video-bg');
+    if (this.jellyfishMode && this.theme === 'dark') {
+      if (!videoBg) {
+        videoBg = document.createElement('video');
+        videoBg.id = 'jellyfish-video-bg';
+        videoBg.src = 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/10480-224857514_medium.mp4';
+        videoBg.autoplay = true;
+        videoBg.loop = true;
+        videoBg.muted = true;
+        videoBg.className = 'jellyfish-video-bg';
+        document.body.appendChild(videoBg);
+      }
+      videoBg.style.display = 'block';
+      document.body.classList.add('jellyfish-active');
+    } else {
+      if (videoBg) {
+        videoBg.style.display = 'none';
+      }
+      document.body.classList.remove('jellyfish-active');
+    }
   },
 
   applyTheme() {

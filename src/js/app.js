@@ -3424,7 +3424,6 @@ async function renderSettingsView() {
   viewContainer.innerHTML = `
     <div class="settings-section fade-in">
       
-      <!-- Theme group -->
       <div class="settings-group">
         <span class="settings-group-title">Display Preferences</span>
         <div class="setting-row">
@@ -3434,6 +3433,16 @@ async function renderSettingsView() {
           </div>
           <label class="switch">
             <input type="checkbox" id="theme-switch" ${store.theme === 'dark' ? 'checked' : ''} />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">Jellyfish Mode</span>
+            <span class="setting-desc">Enable animated jellyfish background in Dark Mode.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="jellyfish-switch" ${store.jellyfishMode ? 'checked' : ''} />
             <span class="slider"></span>
           </label>
         </div>
@@ -3505,6 +3514,14 @@ async function renderSettingsView() {
     store.setTheme(newTheme);
     updateThemeIcon();
   });
+
+  // Attach jellyfish switch event
+  const jellyfishSwitch = document.getElementById('jellyfish-switch');
+  if (jellyfishSwitch) {
+    jellyfishSwitch.addEventListener('change', () => {
+      store.setJellyfishMode(jellyfishSwitch.checked);
+    });
+  }
 
   // Load academic selection description
   const acadInfo = document.getElementById('settings-academic-info');
