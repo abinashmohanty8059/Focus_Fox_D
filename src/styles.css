@@ -59,56 +59,89 @@
   --glass-border: rgba(192, 166, 255, 0.15);
 }
 
-[data-theme="dark"] body.jellyfish-active {
+/* Video Theme Active – Dark Mode glass overrides */
+[data-theme="dark"] body.video-theme-active {
   --bg: transparent;
-  --surface: rgba(37, 30, 78, 0.4);
-  --sidebar-bg: rgba(37, 30, 78, 0.4);
-  --header-bg: rgba(23, 19, 48, 0.4);
+  --surface: rgba(37, 30, 78, 0.35);
+  --surface-hover: rgba(46, 38, 99, 0.45);
+  --sidebar-bg: rgba(37, 30, 78, 0.35);
+  --header-bg: rgba(23, 19, 48, 0.35);
 }
 
-[data-theme="dark"] body.jellyfish-active .selection-card,
-[data-theme="dark"] body.jellyfish-active .subject-card,
-[data-theme="dark"] body.jellyfish-active .subject-card-v2,
-[data-theme="dark"] body.jellyfish-active .topic-card,
-[data-theme="dark"] body.jellyfish-active .algo-topic-card,
-[data-theme="dark"] body.jellyfish-active .resource-link-card,
-[data-theme="dark"] body.jellyfish-active .drive-item-card,
-[data-theme="dark"] body.jellyfish-active .question-row-card,
-[data-theme="dark"] body.jellyfish-active .syllabus-row-card,
-[data-theme="dark"] body.jellyfish-active .dashboard-stat-card,
-[data-theme="dark"] body.jellyfish-active .study-activity-card,
-[data-theme="dark"] body.jellyfish-active .login-card,
-[data-theme="dark"] body.jellyfish-active .streak-square-card,
-[data-theme="dark"] body.jellyfish-active .add-subject-card,
-[data-theme="dark"] body.jellyfish-active .modal-card,
-[data-theme="dark"] body.jellyfish-active .topics-controls,
-[data-theme="dark"] body.jellyfish-active .settings-section,
-[data-theme="dark"] body.jellyfish-active .algo-solution-question-card,
-[data-theme="dark"] body.jellyfish-active .question-content-panel,
-[data-theme="dark"] body.jellyfish-active .ai-solver-panel,
-[data-theme="dark"] body.jellyfish-active .custom-solution-container,
-[data-theme="dark"] body.jellyfish-active .lc-reader-container,
-[data-theme="dark"] body.jellyfish-active .search-input,
-[data-theme="dark"] body.jellyfish-active .custom-select,
-[data-theme="dark"] body.jellyfish-active .filter-select,
-[data-theme="dark"] body.jellyfish-active .filter-pill,
-[data-theme="dark"] body.jellyfish-active .filter-btn-all {
+/* Video Theme Active – Light Mode glass overrides */
+[data-theme="light"] body.video-theme-active {
+  --bg: transparent;
+  --surface: rgba(255, 248, 238, 0.35);
+  --surface-hover: rgba(255, 244, 227, 0.45);
+  --sidebar-bg: rgba(255, 248, 238, 0.35);
+  --header-bg: rgba(251, 234, 208, 0.35);
+}
+
+/* Glass effect on all containers – applies in BOTH themes */
+body.video-theme-active .selection-card,
+body.video-theme-active .subject-card,
+body.video-theme-active .subject-card-v2,
+body.video-theme-active .topic-card,
+body.video-theme-active .algo-topic-card,
+body.video-theme-active .resource-link-card,
+body.video-theme-active .drive-item-card,
+body.video-theme-active .question-row-card,
+body.video-theme-active .syllabus-row-card,
+body.video-theme-active .dashboard-stat-card,
+body.video-theme-active .study-activity-card,
+body.video-theme-active .login-card,
+body.video-theme-active .streak-square-card,
+body.video-theme-active .add-subject-card,
+body.video-theme-active .modal-card,
+body.video-theme-active .topics-controls,
+body.video-theme-active .settings-section,
+body.video-theme-active .algo-solution-question-card,
+body.video-theme-active .question-content-panel,
+body.video-theme-active .ai-solver-panel,
+body.video-theme-active .custom-solution-container,
+body.video-theme-active .lc-reader-container,
+body.video-theme-active .search-input,
+body.video-theme-active .custom-select,
+body.video-theme-active .filter-select,
+body.video-theme-active .filter-pill,
+body.video-theme-active .filter-btn-all,
+body.video-theme-active .stat-card {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
-[data-theme="dark"] body.jellyfish-active aside.sidebar,
-[data-theme="dark"] body.jellyfish-active header.app-header {
+body.video-theme-active aside.sidebar,
+body.video-theme-active header.app-header {
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
+/* Light theme glass border adjustment */
+[data-theme="light"] body.video-theme-active .selection-card,
+[data-theme="light"] body.video-theme-active .subject-card,
+[data-theme="light"] body.video-theme-active .subject-card-v2,
+[data-theme="light"] body.video-theme-active .topic-card,
+[data-theme="light"] body.video-theme-active .algo-topic-card,
+[data-theme="light"] body.video-theme-active .dashboard-stat-card,
+[data-theme="light"] body.video-theme-active .study-activity-card,
+[data-theme="light"] body.video-theme-active .modal-card,
+[data-theme="light"] body.video-theme-active .settings-section,
+[data-theme="light"] body.video-theme-active .stat-card {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+}
 
-.jellyfish-video-bg {
+[data-theme="light"] body.video-theme-active aside.sidebar,
+[data-theme="light"] body.video-theme-active header.app-header {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.06);
+}
+
+.video-theme-bg {
   position: fixed;
   top: 0;
   left: 0;
@@ -120,6 +153,161 @@
   pointer-events: none;
 }
 
+/* Video Theme Dropdown in Header */
+.video-theme-dropdown-wrapper {
+  position: relative;
+}
+
+.video-theme-trigger {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  position: relative;
+}
+
+.video-theme-trigger:hover {
+  background: var(--surface-hover);
+}
+
+.video-theme-trigger svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.video-theme-trigger.has-active {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.video-theme-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  min-width: 260px;
+  z-index: 999;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+body.video-theme-active .video-theme-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.video-theme-panel.open {
+  display: block;
+}
+
+.video-theme-panel-title {
+  padding: 14px 16px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--subtext);
+}
+
+.video-theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border-top: 1px solid var(--border);
+}
+
+.video-theme-option:hover {
+  background: var(--surface-hover);
+}
+
+.video-theme-option-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.video-theme-option-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.video-theme-option-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.video-theme-option-desc {
+  font-size: 0.72rem;
+  color: var(--subtext);
+}
+
+/* Mini toggle specifically for video theme items */
+.vt-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.vt-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.vt-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border);
+  border-radius: 20px;
+  transition: var(--transition-fast);
+}
+
+.vt-slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--transition-fast);
+}
+
+.vt-switch input:checked + .vt-slider {
+  background: var(--primary);
+}
+
+.vt-switch input:checked + .vt-slider::before {
+  transform: translateX(16px);
+}
 
 /* Global Reset */
 * {

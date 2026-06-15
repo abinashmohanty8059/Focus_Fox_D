@@ -1,5 +1,13 @@
 // Focus Fox State Store
 
+const VIDEO_THEMES = {
+  jellyfish: 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/10480-224857514_medium.mp4?v=2',
+  anime: 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/143678-784129658_medium.mp4?v=2',
+  abstract: 'https://ik.imagekit.io/tm5te9cjl/dfbhrgrg/143678-784129658_medium.mp4?v=2'
+};
+
+export { VIDEO_THEMES };
+
 export const store = {
   env: {
     SUPABASE_URL: '',
@@ -18,7 +26,7 @@ export const store = {
   completedTopics: [],
   solvedQuestions: [],
   theme: 'light',
-  jellyfishMode: false,
+  videoTheme: 'none', // 'none', 'jellyfish', 'anime', 'abstract'
 
   init() {
     // Load theme
@@ -44,46 +52,63 @@ export const store = {
       this.selectedSemester = parseInt(savedSemester, 10);
     }
 
-    const savedJellyfish = localStorage.getItem('focus_fox_jellyfish');
-    if (savedJellyfish) {
-      this.jellyfishMode = savedJellyfish === 'true';
+    // Load video theme
+    const savedVideoTheme = localStorage.getItem('focus_fox_video_theme');
+    if (savedVideoTheme && (savedVideoTheme in VIDEO_THEMES || savedVideoTheme === 'none')) {
+      this.videoTheme = savedVideoTheme;
     }
-    this.applyJellyfish();
+    this.applyVideoTheme();
   },
 
   setTheme(newTheme) {
     this.theme = newTheme;
     localStorage.setItem('focus_fox_theme', newTheme);
     this.applyTheme();
-    this.applyJellyfish();
+    this.applyVideoTheme();
   },
 
-  setJellyfishMode(enabled) {
-    this.jellyfishMode = enabled;
-    localStorage.setItem('focus_fox_jellyfish', enabled);
-    this.applyJellyfish();
+  setVideoTheme(themeName) {
+    // If same theme is tapped again, turn it off
+    if (this.videoTheme === themeName) {
+      this.videoTheme = 'none';
+    } else {
+      this.videoTheme = themeName;
+    }
+    localStorage.setItem('focus_fox_video_theme', this.videoTheme);
+    this.applyVideoTheme();
+    // Notify UI to update toggles
+    window.dispatchEvent(new CustomEvent('video-theme-changed', { detail: { videoTheme: this.videoTheme } }));
   },
 
-  applyJellyfish() {
-    let videoBg = document.getElementById('jellyfish-video-bg');
-    if (this.jellyfishMode && this.theme === 'dark') {
+  applyVideoTheme() {
+    let videoBg = document.getElementById('video-theme-bg');
+    if (this.videoTheme !== 'none' && VIDEO_THEMES[this.videoTheme]) {
+      const videoUrl = VIDEO_THEMES[this.videoTheme];
       if (!videoBg) {
         videoBg = document.createElement('video');
-        videoBg.id = 'jellyfish-video-bg';
-        videoBg.src = 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/10480-224857514_medium.mp4';
+        videoBg.id = 'video-theme-bg';
         videoBg.autoplay = true;
         videoBg.loop = true;
         videoBg.muted = true;
-        videoBg.className = 'jellyfish-video-bg';
+        videoBg.playsInline = true;
+        videoBg.className = 'video-theme-bg';
         document.body.appendChild(videoBg);
       }
+      // Only change source if needed
+      if (videoBg.getAttribute('data-theme-name') !== this.videoTheme) {
+        videoBg.src = videoUrl;
+        videoBg.setAttribute('data-theme-name', this.videoTheme);
+        videoBg.load();
+        videoBg.play().catch(() => {});
+      }
       videoBg.style.display = 'block';
-      document.body.classList.add('jellyfish-active');
+      document.body.classList.add('video-theme-active');
     } else {
       if (videoBg) {
         videoBg.style.display = 'none';
+        videoBg.pause();
       }
-      document.body.classList.remove('jellyfish-active');
+      document.body.classList.remove('video-theme-active');
     }
   },
 

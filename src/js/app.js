@@ -1,5 +1,5 @@
 // Focus Fox Single-Page App (SPA) Core JS
-import { store } from './store.js';
+import { store, VIDEO_THEMES } from './store.js';
 import { supabaseClient } from './supabase-client.js';
 import { aiService } from './ai-service.js';
 import { driveService } from './drive-service.js';
@@ -186,6 +186,51 @@ function bindEvents() {
     store.setTheme(newTheme);
     updateThemeIcon();
   });
+
+  // Video Theme Dropdown
+  const vtTrigger = document.getElementById('video-theme-trigger');
+  const vtPanel = document.getElementById('video-theme-panel');
+  if (vtTrigger && vtPanel) {
+    vtTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vtPanel.classList.toggle('open');
+    });
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!vtPanel.contains(e.target) && e.target !== vtTrigger) {
+        vtPanel.classList.remove('open');
+      }
+    });
+    // Wire up each toggle
+    const themeNames = ['jellyfish', 'anime', 'abstract'];
+    themeNames.forEach(name => {
+      const checkbox = document.getElementById(`vt-${name}`);
+      const option = vtPanel.querySelector(`[data-vtheme="${name}"]`);
+      if (checkbox) {
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          store.setVideoTheme(name);
+        });
+      }
+      if (option) {
+        option.addEventListener('click', (e) => {
+          // Don't fire if clicking the toggle itself
+          if (e.target.closest('.vt-switch')) return;
+          store.setVideoTheme(name);
+        });
+      }
+    });
+    // Sync toggle states on load and on change
+    function syncVideoThemeToggles() {
+      themeNames.forEach(name => {
+        const cb = document.getElementById(`vt-${name}`);
+        if (cb) cb.checked = store.videoTheme === name;
+      });
+      vtTrigger.classList.toggle('has-active', store.videoTheme !== 'none');
+    }
+    syncVideoThemeToggles();
+    window.addEventListener('video-theme-changed', syncVideoThemeToggles);
+  }
 
   // State Changed Listener
   window.addEventListener('state-changed', (e) => {
@@ -3438,13 +3483,10 @@ async function renderSettingsView() {
         </div>
         <div class="setting-row">
           <div class="setting-info">
-            <span class="setting-title">Jellyfish Mode</span>
-            <span class="setting-desc">Enable animated jellyfish background in Dark Mode.</span>
+            <span class="setting-title">Video Backgrounds</span>
+            <span class="setting-desc">Pick a live video wallpaper. Use the 🎬 button in the header to switch anytime.</span>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="jellyfish-switch" ${store.jellyfishMode ? 'checked' : ''} />
-            <span class="slider"></span>
-          </label>
+          <span style="font-size:0.82rem; font-weight:600; color:var(--primary);">${store.videoTheme !== 'none' ? store.videoTheme.charAt(0).toUpperCase() + store.videoTheme.slice(1) : 'Off'}</span>
         </div>
       </div>
 
@@ -3515,13 +3557,7 @@ async function renderSettingsView() {
     updateThemeIcon();
   });
 
-  // Attach jellyfish switch event
-  const jellyfishSwitch = document.getElementById('jellyfish-switch');
-  if (jellyfishSwitch) {
-    jellyfishSwitch.addEventListener('change', () => {
-      store.setJellyfishMode(jellyfishSwitch.checked);
-    });
-  }
+
 
   // Load academic selection description
   const acadInfo = document.getElementById('settings-academic-info');
