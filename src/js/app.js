@@ -2809,17 +2809,94 @@ async function renderAlgoSolutionView() {
 
   const diffClass = q.difficulty?.toLowerCase() === 'easy' ? 'badge-easy' : q.difficulty?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
 
-  // Render main layout skeleton
+  // Render main layout skeleton with collapsible question panel
   viewContainer.innerHTML = `
-    <div class="algo-solution-layout fade-in">
-      <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
-        <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
-          <div class="spinner"></div>
-          <p style="color:var(--primary);font-weight:600;margin-top:16px;">Checking for solutions...</p>
+    <div class="sol-layout-with-panel">
+      <!-- Collapsible Question Panel (hidden by default) -->
+      <div class="sol-question-panel" id="sol-question-panel">
+        <div class="sol-question-panel-header">
+          <h3>📋 ${q.question_name}</h3>
+          <button class="sol-panel-close-btn" id="sol-panel-close" title="Close question panel">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="sol-question-panel-body lc-question-content" id="sol-panel-body">
+          <div class="fox-loader" style="height:40vh;">
+            <div class="fox-loader-icon">
+              <img src="/assets/Foxy.png" alt="🦊" onerror="this.outerHTML='🦊'" />
+            </div>
+            <div class="fox-loader-dots"><span></span><span></span><span></span></div>
+            <span class="fox-loader-text">Loading question...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solution content area -->
+      <div class="sol-content-area" id="sol-content-area">
+        <!-- Toggle tab to open question panel -->
+        <button class="sol-panel-toggle" id="sol-panel-toggle" title="Show question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          Question
+        </button>
+
+        <div class="algo-solution-content-area" id="algo-sol-content-area" style="flex:1; display:flex; flex-direction:column; position:relative;">
+          <div class="ai-solver-loading" style="padding: 40px; text-align: center;">
+            <div class="spinner"></div>
+            <p style="color:var(--primary);font-weight:600;margin-top:16px;">Checking for solutions...</p>
+          </div>
         </div>
       </div>
     </div>
   `;
+
+  // Wire up the question panel toggle
+  const questionPanel = document.getElementById('sol-question-panel');
+  const panelToggle = document.getElementById('sol-panel-toggle');
+  const panelClose = document.getElementById('sol-panel-close');
+  const panelBody = document.getElementById('sol-panel-body');
+
+  let panelContentLoaded = false;
+
+  panelToggle?.addEventListener('click', () => {
+    questionPanel.classList.add('open');
+    panelToggle.style.display = 'none';
+
+    // Lazy-load question content on first open
+    if (!panelContentLoaded && q.question_link) {
+      panelContentLoaded = true;
+      const slugMatch = q.question_link.match(/problems\/([^/?#]+)/);
+      const titleSlug = slugMatch ? slugMatch[1] : '';
+      if (titleSlug) {
+        invoke('fetch_leetcode_question', { titleSlug }).then(data => {
+          if (data && data.content) {
+            panelBody.innerHTML = `
+              <div style="margin-bottom:16px;">
+                <h2 style="font-size:1.2rem; font-weight:800; color:var(--text); margin:0 0 8px 0;">
+                  ${data.questionFrontendId ? data.questionFrontendId + '. ' : ''}${data.title}
+                </h2>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <span class="algo-diff-badge ${diffClass}" style="padding:2px 10px; font-size:0.72rem;">${data.difficulty}</span>
+                  ${(data.topicTags || []).map(t => `<span style="background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:16px;font-size:0.68rem;font-weight:600;color:var(--subtext);">${t.name}</span>`).join('')}
+                </div>
+              </div>
+              <div style="font-size:0.88rem; line-height:1.75; color:var(--text);">
+                ${data.content}
+              </div>
+            `;
+          } else {
+            panelBody.innerHTML = `<p style="color:var(--subtext);text-align:center;padding:40px 0;">Could not load question content.</p>`;
+          }
+        }).catch(() => {
+          panelBody.innerHTML = `<p style="color:var(--subtext);text-align:center;padding:40px 0;">Failed to fetch question. Check your connection.</p>`;
+        });
+      }
+    }
+  });
+
+  panelClose?.addEventListener('click', () => {
+    questionPanel.classList.remove('open');
+    panelToggle.style.display = '';
+  });
 
   const contentArea = document.getElementById('algo-sol-content-area');
 
@@ -3127,11 +3204,16 @@ async function renderLeetcodeWebview() {
     return;
   }
 
-  // Show loading state
+  // Show cute fox loading state
   viewContainer.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; gap:16px;">
-      <div class="spinner"></div>
-      <p style="color:var(--primary); font-weight:600; font-size:0.95rem;">Fetching question from LeetCode...</p>
+    <div class="fox-loader">
+      <div class="fox-loader-icon">
+        <img src="/assets/Foxy.png" alt="🦊" onerror="this.outerHTML='🦊'" />
+      </div>
+      <div class="fox-loader-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="fox-loader-text">Fetching question...</span>
     </div>
   `;
 
@@ -3171,36 +3253,38 @@ async function renderLeetcodeWebview() {
     ` : '';
 
     viewContainer.innerHTML = `
-      <div class="lc-reader-container fade-in" style="max-width:820px; margin:0 auto; padding:32px 24px;">
-        <!-- Header bar -->
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px;">
-          <button id="lc-back-btn" style="display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-            Back
-          </button>
-          <button id="lc-open-external" style="display:flex; align-items:center; gap:6px; background:var(--primary); border:none; border-radius:var(--radius-sm); padding:8px 16px; color:#fff; cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Open on LeetCode
-          </button>
-        </div>
-
-        <!-- Title + metadata -->
-        <div style="margin-bottom:24px;">
-          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 12px 0; line-height:1.3;">
-            ${data.questionFrontendId ? data.questionFrontendId + '. ' : ''}${data.title}
-          </h1>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span class="algo-diff-badge ${diffClass}" style="padding:3px 12px; font-size:0.76rem;">${data.difficulty}</span>
-            ${topicTagsHtml}
+      <div class="lc-reader-scroll">
+        <div class="lc-reader-container fade-in" style="max-width:820px; margin:0 auto; padding:32px 24px 60px;">
+          <!-- Header bar -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px;">
+            <button id="lc-back-btn" style="display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Back
+            </button>
+            <button id="lc-open-external" style="display:flex; align-items:center; gap:6px; background:var(--primary); border:none; border-radius:var(--radius-sm); padding:8px 16px; color:#fff; cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Open on LeetCode
+            </button>
           </div>
-        </div>
 
-        <!-- Question content (LeetCode HTML) -->
-        <div class="lc-question-content" style="font-size:0.92rem; line-height:1.8; color:var(--text);">
-          ${data.content}
-        </div>
+          <!-- Title + metadata -->
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 12px 0; line-height:1.3;">
+              ${data.questionFrontendId ? data.questionFrontendId + '. ' : ''}${data.title}
+            </h1>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span class="algo-diff-badge ${diffClass}" style="padding:3px 12px; font-size:0.76rem;">${data.difficulty}</span>
+              ${topicTagsHtml}
+            </div>
+          </div>
 
-        ${hintsHtml}
+          <!-- Question content (LeetCode HTML) -->
+          <div class="lc-question-content" style="font-size:0.92rem; line-height:1.8; color:var(--text);">
+            ${data.content}
+          </div>
+
+          ${hintsHtml}
+        </div>
       </div>
     `;
 
