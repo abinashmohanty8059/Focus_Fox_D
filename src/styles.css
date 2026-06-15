@@ -59,12 +59,54 @@
   --glass-border: rgba(192, 166, 255, 0.15);
 }
 
-body.jellyfish-active[data-theme="dark"] {
+[data-theme="dark"] body.jellyfish-active {
   --bg: transparent;
   --surface: rgba(37, 30, 78, 0.4);
   --sidebar-bg: rgba(37, 30, 78, 0.4);
   --header-bg: rgba(23, 19, 48, 0.4);
 }
+
+[data-theme="dark"] body.jellyfish-active .selection-card,
+[data-theme="dark"] body.jellyfish-active .subject-card,
+[data-theme="dark"] body.jellyfish-active .subject-card-v2,
+[data-theme="dark"] body.jellyfish-active .topic-card,
+[data-theme="dark"] body.jellyfish-active .algo-topic-card,
+[data-theme="dark"] body.jellyfish-active .resource-link-card,
+[data-theme="dark"] body.jellyfish-active .drive-item-card,
+[data-theme="dark"] body.jellyfish-active .question-row-card,
+[data-theme="dark"] body.jellyfish-active .syllabus-row-card,
+[data-theme="dark"] body.jellyfish-active .dashboard-stat-card,
+[data-theme="dark"] body.jellyfish-active .study-activity-card,
+[data-theme="dark"] body.jellyfish-active .login-card,
+[data-theme="dark"] body.jellyfish-active .streak-square-card,
+[data-theme="dark"] body.jellyfish-active .add-subject-card,
+[data-theme="dark"] body.jellyfish-active .modal-card,
+[data-theme="dark"] body.jellyfish-active .topics-controls,
+[data-theme="dark"] body.jellyfish-active .settings-section,
+[data-theme="dark"] body.jellyfish-active .algo-solution-question-card,
+[data-theme="dark"] body.jellyfish-active .question-content-panel,
+[data-theme="dark"] body.jellyfish-active .ai-solver-panel,
+[data-theme="dark"] body.jellyfish-active .custom-solution-container,
+[data-theme="dark"] body.jellyfish-active .lc-reader-container,
+[data-theme="dark"] body.jellyfish-active .search-input,
+[data-theme="dark"] body.jellyfish-active .custom-select,
+[data-theme="dark"] body.jellyfish-active .filter-select,
+[data-theme="dark"] body.jellyfish-active .filter-pill,
+[data-theme="dark"] body.jellyfish-active .filter-btn-all {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] body.jellyfish-active aside.sidebar,
+[data-theme="dark"] body.jellyfish-active header.app-header {
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
 
 .jellyfish-video-bg {
   position: fixed;
