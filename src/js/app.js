@@ -1598,19 +1598,43 @@ async function renderTopicsTab(container) {
   const syllabusOrder = [...topics];
   const importanceOrder = [...topics].sort((a, b) => (b.importanceScore || 0) - (a.importanceScore || 0));
 
+  // Set up container structure once
+  container.innerHTML = `
+    <div class="topics-controls">
+      <div class="sort-label">Sort Topics:</div>
+      <div class="sort-group">
+        <button class="sort-btn" id="btn-sort-syllabus">
+          Syllabus Order
+        </button>
+        <button class="sort-btn" id="btn-sort-importance">
+          Importance Order
+        </button>
+      </div>
+    </div>
+    <div class="topics-list"></div>
+  `;
+
+  const topicsListContainer = container.querySelector('.topics-list');
+  const btnSyllabus = container.querySelector('#btn-sort-syllabus');
+  const btnImportance = container.querySelector('#btn-sort-importance');
+
   function renderList() {
+    // Update active class on sort buttons
+    if (activeTopicSort === 'syllabus') {
+      if (btnSyllabus) btnSyllabus.classList.add('active');
+      if (btnImportance) btnImportance.classList.remove('active');
+    } else {
+      if (btnSyllabus) btnSyllabus.classList.remove('active');
+      if (btnImportance) btnImportance.classList.add('active');
+    }
+
     const activeTopics = activeTopicSort === 'importance' ? importanceOrder : syllabusOrder;
 
     let topicsHtml = '';
     activeTopics.forEach((topic) => {
       const isCompleted = store.isTopicCompleted(topic.id);
       const score = topic.importanceScore || 0;
-      
-      // Calculate dynamic HSL color based on score (0 to 100)
-      // Clamped score to 0-100 range
       const percentage = Math.min(100, Math.max(0, Math.round(score)));
-      const hue = Math.round((1 - (percentage / 100)) * 60);
-      const barColor = `hsl(${hue}, 90%, 50%)`;
       
       // Severity tags based on percentage
       let urgencyText = 'Low Importance';
@@ -1634,13 +1658,13 @@ async function renderTopicsTab(container) {
                 <div class="importance-row">
                   <span class="importance-urgency-text">${urgencyText}</span>
                   <div class="importance-bar">
-                    <div class="importance-fill" data-percentage="${percentage}" data-color="${barColor}"></div>
+                    <div class="importance-fill" data-percentage="${percentage}"></div>
                   </div>
                 </div>
               </div>
             </div>
             <div class="topic-actions">
-              <div class="importance-percentage-badge" data-color="${barColor}">${percentage}%</div>
+              <div class="importance-percentage-badge">${percentage}%</div>
               <svg class="topic-chevron" viewBox="0 0 24 24">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -1667,39 +1691,16 @@ async function renderTopicsTab(container) {
       `;
     });
 
-    const controlsHtml = `
-      <div class="topics-controls">
-        <div class="sort-label">Sort Topics:</div>
-        <div class="sort-group">
-          <button class="sort-btn ${activeTopicSort === 'syllabus' ? 'active' : ''}" id="btn-sort-syllabus">
-            Syllabus Order
-          </button>
-          <button class="sort-btn ${activeTopicSort === 'importance' ? 'active' : ''}" id="btn-sort-importance">
-            Importance Order
-          </button>
-        </div>
-      </div>
-    `;
+    topicsListContainer.innerHTML = topicsHtml;
 
-    container.innerHTML = `
-      ${controlsHtml}
-      <div class="topics-list">${topicsHtml}</div>
-    `;
-
-    // Set importance bar widths and colors programmatically to comply with CSP on inline styles
-    container.querySelectorAll('.importance-fill').forEach(fill => {
+    // Set importance bar widths programmatically
+    topicsListContainer.querySelectorAll('.importance-fill').forEach(fill => {
       const pct = fill.getAttribute('data-percentage');
-      const color = fill.getAttribute('data-color');
       fill.style.width = pct + '%';
-      fill.style.backgroundColor = color;
-    });
-
-    container.querySelectorAll('.importance-percentage-badge').forEach(badge => {
-      badge.style.color = badge.getAttribute('data-color');
     });
 
     // Bind accordion click handlers
-    container.querySelectorAll('.topic-header').forEach(header => {
+    topicsListContainer.querySelectorAll('.topic-header').forEach(header => {
       header.addEventListener('click', (e) => {
         if (e.target.closest('.topic-checkbox')) return;
         
@@ -1707,7 +1708,7 @@ async function renderTopicsTab(container) {
         const isOpen = card.classList.contains('open');
         
         // Close others
-        container.querySelectorAll('.topic-card').forEach(c => c.classList.remove('open'));
+        topicsListContainer.querySelectorAll('.topic-card').forEach(c => c.classList.remove('open'));
         
         if (!isOpen) {
           card.classList.add('open');
@@ -1718,7 +1719,7 @@ async function renderTopicsTab(container) {
     });
 
     // Bind checkbox toggle click handlers
-    container.querySelectorAll('.topic-checkbox').forEach(box => {
+    topicsListContainer.querySelectorAll('.topic-checkbox').forEach(box => {
       box.addEventListener('click', () => {
         const topicId = box.getAttribute('data-topic-id');
         store.toggleTopicCompletion(topicId);
@@ -1727,7 +1728,7 @@ async function renderTopicsTab(container) {
     });
 
     // Practice Topic button click handlers
-    container.querySelectorAll('.topic-start-btn').forEach(btn => {
+    topicsListContainer.querySelectorAll('.topic-start-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const topicId = btn.getAttribute('data-topic-id');
         const topic = topics.find(t => t.id === topicId);
@@ -1735,29 +1736,26 @@ async function renderTopicsTab(container) {
         store.navigateTo('question-list');
       });
     });
-
-    // Bind sort controls click handlers
-    const btnSyllabus = container.querySelector('#btn-sort-syllabus');
-    const btnImportance = container.querySelector('#btn-sort-importance');
-
-    if (btnSyllabus && btnImportance) {
-      btnSyllabus.addEventListener('click', () => {
-        if (activeTopicSort !== 'syllabus') {
-          activeTopicSort = 'syllabus';
-          renderList();
-        }
-      });
-
-      btnImportance.addEventListener('click', () => {
-        if (activeTopicSort !== 'importance') {
-          activeTopicSort = 'importance';
-          renderList();
-        }
-      });
-    }
   }
 
-  // Initial render of the topics list
+  // Bind sort controls click handlers
+  if (btnSyllabus && btnImportance) {
+    btnSyllabus.addEventListener('click', () => {
+      if (activeTopicSort !== 'syllabus') {
+        activeTopicSort = 'syllabus';
+        renderList();
+      }
+    });
+
+    btnImportance.addEventListener('click', () => {
+      if (activeTopicSort !== 'importance') {
+        activeTopicSort = 'importance';
+        renderList();
+      }
+    });
+  }
+
+  // Initial render
   renderList();
 }
 
