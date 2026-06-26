@@ -37,6 +37,7 @@ let navSelection;
 let navDashboard;
 let navSettings;
 let navAlgo;
+let navAbout;
 let navSyllabus;
 let lightbox;
 let lightboxImg;
@@ -57,6 +58,7 @@ async function init() {
   navDashboard = document.getElementById('nav-dashboard');
   navSettings = document.getElementById('nav-settings');
   navAlgo = document.getElementById('nav-algo');
+  navAbout = document.getElementById('nav-about');
   navSyllabus = document.getElementById('nav-syllabus');
   lightbox = document.getElementById('lightbox');
   lightboxImg = document.getElementById('lightbox-img');
@@ -149,6 +151,12 @@ function bindEvents() {
   navAlgo.addEventListener('click', () => {
     store.navigateTo('algo-topics');
   });
+
+  if (navAbout) {
+    navAbout.addEventListener('click', () => {
+      store.navigateTo('about');
+    });
+  }
 
   if (navSyllabus) {
     navSyllabus.addEventListener('click', () => {
@@ -330,6 +338,7 @@ function updateSidebarActiveState(view) {
   navDashboard.classList.remove('active');
   navSettings.classList.remove('active');
   if (navAlgo) navAlgo.classList.remove('active');
+  if (navAbout) navAbout.classList.remove('active');
   if (navSyllabus) navSyllabus.classList.remove('active');
 
   if (view === 'selection') {
@@ -340,6 +349,8 @@ function updateSidebarActiveState(view) {
     if (navSyllabus) navSyllabus.classList.add('active');
   } else if (view === 'settings') {
     navSettings.classList.add('active');
+  } else if (view === 'about') {
+    if (navAbout) navAbout.classList.add('active');
   } else if (view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution') {
     if (navAlgo) navAlgo.classList.add('active');
   }
@@ -391,6 +402,9 @@ function updateHeader(view, data) {
   } else if (view === 'settings') {
     headerTitleText.textContent = "Settings";
     headerSubtitleText.textContent = "App preferences and API connection status";
+  } else if (view === 'about') {
+    headerTitleText.textContent = "About Focus Fox";
+    headerSubtitleText.textContent = "Learn more about the application and its creators";
   } else if (view === 'algo-topics') {
     headerTitleText.textContent = "Algo & Code";
     headerSubtitleText.textContent = "LeetCode practice organized by topic";
@@ -532,6 +546,9 @@ async function renderView(view, data) {
         break;
       case 'settings':
         await renderSettingsView();
+        break;
+      case 'about':
+        await renderAboutView();
         break;
       case 'algo-topics':
         await renderAlgoTopicsView();
@@ -3797,6 +3814,108 @@ function initStopwatch() {
 
   // Initialize display
   updateStopwatchUI();
+}
+
+// Render About View
+async function renderAboutView() {
+  viewContainer.innerHTML = `
+    <div class="about-section fade-in">
+      <div class="about-header-card">
+        <div class="about-logo-title">
+          <span class="about-title-main">FOCUS</span>
+          <span class="about-title-sub">FOX</span>
+        </div>
+        <div class="about-logo-container">
+          <img src="assets/Foxy.png" alt="Focus Fox Icon" onerror="this.src='assets/logo.jpg'" />
+        </div>
+      </div>
+      
+      <p class="about-description">
+        Focus Fox is your ultimate engineering companion designed to help you prepare for core engineering exams. Keep track of previous year questions, practice DSA patterns, collaborate on doubt feeds, and leverage customized utilities all in one place to streamline your learning journey.
+      </p>
+      
+      <h2 class="about-section-heading">FOUNDERS/ DEVELOPERS</h2>
+      
+      <div class="developers-container">
+        <!-- Yogisha Rani -->
+        <div class="developer-card">
+          <div class="developer-info-row">
+            <div class="developer-avatar">
+              <img src="assets/ref1.jpg" alt="Yogisha Rani" onerror="this.src='assets/logo.jpg'" />
+            </div>
+            <div class="developer-details">
+              <span class="developer-name">Yogisha Rani</span>
+              <span class="developer-role">@Random</span>
+            </div>
+          </div>
+          <div class="developer-socials-row">
+            <a class="social-button" id="dev1-linkedin" href="#">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a class="social-button" id="dev1-github" href="#">
+              <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              GitHub
+            </a>
+            <a class="social-button" id="dev1-instagram" href="#">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37zM17.5 6.5h.01"/></svg>
+              Instagram
+            </a>
+          </div>
+        </div>
+
+        <!-- Abinash Mohanty -->
+        <div class="developer-card">
+          <div class="developer-info-row">
+            <div class="developer-avatar">
+              <img src="assets/ref2.jpg" alt="Abinash Mohanty" onerror="this.src='assets/logo.jpg'" />
+            </div>
+            <div class="developer-details">
+              <span class="developer-name">Abinash Mohanty</span>
+              <span class="developer-role">@Royace</span>
+            </div>
+          </div>
+          <div class="developer-socials-row">
+            <a class="social-button" id="dev2-linkedin" href="#">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a class="social-button" id="dev2-github" href="#">
+              <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              GitHub
+            </a>
+            <a class="social-button" id="dev2-instagram" href="#">
+              <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37zM17.5 6.5h.01"/></svg>
+              Instagram
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach event listeners to links
+  const setupDevLink = (id, url) => {
+    document.getElementById(id)?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.__TAURI__) {
+        invoke('plugin:opener|open_url', { url }).catch(err => {
+          console.error("Failed to open URL via Tauri opener:", err);
+          window.open(url, '_blank');
+        });
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+  };
+
+  setupDevLink('dev1-linkedin', 'https://www.linkedin.com/in/yogisha-rani-1382a7381/');
+  setupDevLink('dev1-github', 'https://github.com/LostRunes');
+  setupDevLink('dev1-instagram', 'https://www.instagram.com/lostpresence_2/#');
+
+  setupDevLink('dev2-linkedin', 'https://www.linkedin.com/in/abinash-mohanty-/');
+  setupDevLink('dev2-github', 'https://github.com/abinashmohanty8059');
+  setupDevLink('dev2-instagram', 'https://www.instagram.com/_.royace._/');
 }
 
 // Start the Application

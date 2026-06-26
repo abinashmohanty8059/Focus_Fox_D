@@ -82,8 +82,31 @@ export const store = {
 
   applyVideoTheme() {
     let videoBg = document.getElementById('video-theme-bg');
+    let loader = document.getElementById('video-theme-loader');
+
     if (this.videoTheme !== 'none' && VIDEO_THEMES[this.videoTheme]) {
       const videoUrl = VIDEO_THEMES[this.videoTheme];
+      const displayName = this.videoTheme.charAt(0).toUpperCase() + this.videoTheme.slice(1);
+
+      // Create or show loader
+      if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'video-theme-loader';
+        loader.className = 'video-theme-loader';
+        loader.innerHTML = `
+          <div class="vt-loader-content">
+            <div class="vt-spinner"></div>
+            <div class="vt-loader-text">Loading ${displayName} Theme</div>
+            <div class="vt-loader-subtext">Fetching ambient video background...</div>
+          </div>
+        `;
+        document.body.appendChild(loader);
+      } else {
+        const textEl = loader.querySelector('.vt-loader-text');
+        if (textEl) textEl.textContent = `Loading ${displayName} Theme`;
+        loader.classList.remove('fade-out');
+      }
+
       if (!videoBg) {
         videoBg = document.createElement('video');
         videoBg.id = 'video-theme-bg';
@@ -94,21 +117,43 @@ export const store = {
         videoBg.className = 'video-theme-bg';
         document.body.appendChild(videoBg);
       }
-      // Only change source if needed
+
+      let srcChanged = false;
       if (videoBg.getAttribute('data-theme-name') !== this.videoTheme) {
         videoBg.src = videoUrl;
         videoBg.setAttribute('data-theme-name', this.videoTheme);
         videoBg.load();
+        srcChanged = true;
+      }
+
+      const showVideo = () => {
+        document.body.classList.add('video-theme-active');
+        if (loader) {
+          loader.classList.add('fade-out');
+        }
+      };
+
+      if (srcChanged) {
+        videoBg.onplaying = showVideo;
+        videoBg.oncanplay = showVideo;
+        videoBg.play().catch((err) => {
+          console.warn("Autoplay prevented, showing interface", err);
+          showVideo();
+        });
+      } else {
+        showVideo();
         videoBg.play().catch(() => {});
       }
       videoBg.style.display = 'block';
-      document.body.classList.add('video-theme-active');
     } else {
       if (videoBg) {
         videoBg.style.display = 'none';
         videoBg.pause();
       }
       document.body.classList.remove('video-theme-active');
+      if (loader) {
+        loader.classList.add('fade-out');
+      }
     }
   },
 
