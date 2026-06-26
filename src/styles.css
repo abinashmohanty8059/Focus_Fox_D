@@ -65,7 +65,7 @@
   --surface: rgba(37, 30, 78, 0.35);
   --surface-hover: rgba(46, 38, 99, 0.45);
   --sidebar-bg: rgba(37, 30, 78, 0.35);
-  --header-bg: rgba(23, 19, 48, 0.35);
+  --header-bg: rgba(37, 30, 78, 0.35);
 }
 
 /* Video Theme Active – Light Mode glass overrides */
@@ -74,7 +74,7 @@
   --surface: rgba(255, 248, 238, 0.35);
   --surface-hover: rgba(255, 244, 227, 0.45);
   --sidebar-bg: rgba(255, 248, 238, 0.35);
-  --header-bg: rgba(251, 234, 208, 0.35);
+  --header-bg: rgba(255, 248, 238, 0.35);
 }
 
 /* Glass effect on all containers – applies in BOTH themes */
@@ -112,12 +112,19 @@ body.video-theme-active .stat-card {
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
-body.video-theme-active aside.sidebar,
-body.video-theme-active header.app-header {
+body.video-theme-active aside.sidebar {
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   border-color: rgba(255, 255, 255, 0.18) !important;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+body.video-theme-active header.app-header {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
 }
 
 /* Light theme glass border adjustment */
@@ -135,10 +142,16 @@ body.video-theme-active header.app-header {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="light"] body.video-theme-active aside.sidebar,
+body.video-theme-active aside.sidebar {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
 [data-theme="light"] body.video-theme-active header.app-header {
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.06);
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: none !important;
 }
 
 .video-theme-bg {
