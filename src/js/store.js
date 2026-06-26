@@ -1,9 +1,7 @@
 // Focus Fox State Store
 
 const VIDEO_THEMES = {
-  jellyfish: 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/10480-224857514_medium.mp4?v=2',
-  anime: 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/143678-784129658_medium.mp4?v=2',
-  abstract: 'https://ik.imagekit.io/tm5te9cjl/dfbhrgrg/143678-784129658_medium.mp4?v=2'
+  jellyfish: 'https://ik.imagekit.io/tm5te9cjl/focus%20fox%20background/10480-224857514_medium.mp4?v=2'
 };
 
 export { VIDEO_THEMES };

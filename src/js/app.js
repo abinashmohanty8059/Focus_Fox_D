@@ -192,52 +192,32 @@ function bindEvents() {
   themeToggleBtn.addEventListener('click', () => {
     const newTheme = store.theme === 'dark' ? 'light' : 'dark';
     store.setTheme(newTheme);
+    if (newTheme === 'light' && store.videoTheme === 'jellyfish') {
+      store.setVideoTheme('none');
+    }
     updateThemeIcon();
   });
 
-  // Video Theme Dropdown
-  const vtTrigger = document.getElementById('video-theme-trigger');
-  const vtPanel = document.getElementById('video-theme-panel');
-  if (vtTrigger && vtPanel) {
-    vtTrigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      vtPanel.classList.toggle('open');
-    });
-    // Close panel when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!vtPanel.contains(e.target) && e.target !== vtTrigger) {
-        vtPanel.classList.remove('open');
+  // Jellyfish Theme Toggle Button
+  const jellyfishToggleBtn = document.getElementById('jellyfish-toggle-btn');
+  if (jellyfishToggleBtn) {
+    jellyfishToggleBtn.addEventListener('click', () => {
+      if (store.videoTheme === 'jellyfish') {
+        store.setVideoTheme('none');
+      } else {
+        if (store.theme === 'light') {
+          store.setTheme('dark');
+          updateThemeIcon();
+        }
+        store.setVideoTheme('jellyfish');
       }
     });
-    // Wire up each toggle
-    const themeNames = ['jellyfish', 'anime', 'abstract'];
-    themeNames.forEach(name => {
-      const checkbox = document.getElementById(`vt-${name}`);
-      const option = vtPanel.querySelector(`[data-vtheme="${name}"]`);
-      if (checkbox) {
-        checkbox.addEventListener('change', (e) => {
-          e.stopPropagation();
-          store.setVideoTheme(name);
-        });
-      }
-      if (option) {
-        option.addEventListener('click', (e) => {
-          // Don't fire if clicking the toggle itself
-          if (e.target.closest('.vt-switch')) return;
-          store.setVideoTheme(name);
-        });
-      }
-    });
-    // Sync toggle states on load and on change
-    function syncVideoThemeToggles() {
-      themeNames.forEach(name => {
-        const cb = document.getElementById(`vt-${name}`);
-        if (cb) cb.checked = store.videoTheme === name;
-      });
-      vtTrigger.classList.toggle('has-active', store.videoTheme !== 'none');
-    }
-    syncVideoThemeToggles();
-    window.addEventListener('video-theme-changed', syncVideoThemeToggles);
+
+    const syncJellyfishButtonState = () => {
+      jellyfishToggleBtn.classList.toggle('has-active', store.videoTheme === 'jellyfish');
+    };
+    syncJellyfishButtonState();
+    window.addEventListener('video-theme-changed', syncJellyfishButtonState);
   }
 
   // State Changed Listener
@@ -3500,10 +3480,13 @@ async function renderSettingsView() {
         </div>
         <div class="setting-row">
           <div class="setting-info">
-            <span class="setting-title">Video Backgrounds</span>
-            <span class="setting-desc">Pick a live video wallpaper. Use the 🎬 button in the header to switch anytime.</span>
+            <span class="setting-title">Jellyfish Ambient Background</span>
+            <span class="setting-desc">Toggle the deep sea ambient glow video background. Best enjoyed in Dark Mode.</span>
           </div>
-          <span style="font-size:0.82rem; font-weight:600; color:var(--primary);">${store.videoTheme !== 'none' ? store.videoTheme.charAt(0).toUpperCase() + store.videoTheme.slice(1) : 'Off'}</span>
+          <label class="switch">
+            <input type="checkbox" id="jellyfish-switch" ${store.videoTheme === 'jellyfish' ? 'checked' : ''} />
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
 
@@ -3571,8 +3554,30 @@ async function renderSettingsView() {
   themeSwitch.addEventListener('change', () => {
     const newTheme = themeSwitch.checked ? 'dark' : 'light';
     store.setTheme(newTheme);
+    if (newTheme === 'light' && store.videoTheme === 'jellyfish') {
+      store.setVideoTheme('none');
+      const jfSwitch = document.getElementById('jellyfish-switch');
+      if (jfSwitch) jfSwitch.checked = false;
+    }
     updateThemeIcon();
   });
+
+  // Attach jellyfish switch event
+  const jellyfishSwitch = document.getElementById('jellyfish-switch');
+  if (jellyfishSwitch) {
+    jellyfishSwitch.addEventListener('change', () => {
+      if (jellyfishSwitch.checked) {
+        if (store.theme === 'light') {
+          store.setTheme('dark');
+          if (themeSwitch) themeSwitch.checked = true;
+          updateThemeIcon();
+        }
+        store.setVideoTheme('jellyfish');
+      } else {
+        store.setVideoTheme('none');
+      }
+    });
+  }
 
 
 

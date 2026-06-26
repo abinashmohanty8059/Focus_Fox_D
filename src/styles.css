@@ -5542,5 +5542,16 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   font-family: var(--font-sans);
 }
 
+#jellyfish-toggle-btn {
+  transition: transform var(--transition-normal), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+#jellyfish-toggle-btn.has-active {
+  background: var(--surface-active);
+  border-color: var(--primary);
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(192, 166, 255, 0.3);
+}
+
 
 
