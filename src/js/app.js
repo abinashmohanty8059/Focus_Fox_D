@@ -2603,9 +2603,8 @@ async function renderAlgoTopicsView() {
     <div id="ring-chart-tooltip"></div>
 
     <!-- Header outside grid so columns start at the exact same vertical level -->
-    <div class="algo-topics-header fade-in" style="margin-bottom: 24px;">
-      <h2>Choose a Topic</h2>
-      <p>Select a data structure or algorithm to practice LeetCode questions</p>
+    <div class="algo-topics-header fade-in" style="margin-bottom: 12px;">
+      <h2 style="margin: 0;">Choose a Topic</h2>
     </div>
 
     <div class="algo-dashboard-layout" style="display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 32px; align-items: start; width: 100%;">
