@@ -4237,6 +4237,142 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   aspect-ratio: 1;
 }
 
+/* Mini calendar styling (for right card preview) */
+.mini-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+}
+
+.mini-calendar .heatmap-grid {
+  grid-template-columns: repeat(7, 12px);
+  grid-template-rows: auto;
+  justify-content: center;
+  gap: 3px;
+  width: auto;
+}
+
+.mini-calendar .heatmap-cell {
+  width: 12px;
+  height: 12px;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: rgba(var(--primary-rgb), 0.08);
+  transition: var(--transition-fast);
+}
+
+.mini-calendar .heatmap-cell.empty {
+  background: transparent;
+  pointer-events: none;
+}
+
+.mini-calendar .calendar-weekday {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--subtext);
+  padding-bottom: 1px;
+}
+
+.mini-calendar .heatmap-cell.level-1 {
+  background: rgba(var(--primary-rgb), 0.25);
+}
+
+.mini-calendar .heatmap-cell.level-2 {
+  background: rgba(var(--primary-rgb), 0.5);
+}
+
+.mini-calendar .heatmap-cell.level-3 {
+  background: rgba(var(--primary-rgb), 0.75);
+}
+
+.mini-calendar .heatmap-cell.level-4 {
+  background: rgba(var(--primary-rgb), 1);
+}
+
+/* Heatmap Analytics Modal styling overrides for responsiveness */
+#heatmap-analytics-modal .modal-card {
+  max-height: 95vh;
+  overflow-y: auto;
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.modal-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: auto;
+  gap: 6px;
+  width: 100%;
+}
+
+.modal-calendar-grid .calendar-weekday {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--subtext);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.modal-calendar-grid .heatmap-cell {
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 36px;
+  max-height: 36px;
+  margin: 0 auto;
+  border-radius: 6px;
+  background: rgba(var(--primary-rgb), 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.modal-calendar-grid .heatmap-cell.empty {
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.modal-calendar-grid .heatmap-cell:not(.empty):hover {
+  transform: scale(1.1);
+  outline: 1px solid var(--primary);
+}
+
+.modal-calendar-grid .heatmap-cell .day-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0.9;
+  user-select: none;
+}
+
+.modal-calendar-grid .heatmap-cell.level-1 {
+  background: rgba(var(--primary-rgb), 0.25);
+}
+
+.modal-calendar-grid .heatmap-cell.level-2 {
+  background: rgba(var(--primary-rgb), 0.5);
+}
+
+.modal-calendar-grid .heatmap-cell.level-3 {
+  background: rgba(var(--primary-rgb), 0.75);
+}
+
+.modal-calendar-grid .heatmap-cell.level-3 .day-number,
+.modal-calendar-grid .heatmap-cell.level-4 .day-number {
+  color: #fff;
+  opacity: 1;
+}
+
+.modal-calendar-grid .heatmap-cell.level-4 {
+  background: rgba(var(--primary-rgb), 1);
+}
+
 /* Continue Learning Banner */
 .continue-learning-banner {
   background: linear-gradient(135deg, rgba(37, 30, 78, 0.9) 0%, rgba(23, 19, 48, 0.9) 100%);

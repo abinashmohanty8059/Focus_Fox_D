@@ -173,12 +173,54 @@ export const store = {
     localStorage.removeItem('focus_fox_selected_semester');
   },
 
+  logStudyMinutes(minutes) {
+    const historyKey = 'focus_fox_study_history';
+    const history = JSON.parse(localStorage.getItem(historyKey) || '{}');
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    history[dateStr] = Math.max(0, (history[dateStr] || 0) + minutes);
+    localStorage.setItem(historyKey, JSON.stringify(history));
+
+    // Also update subject study time if there's an active selected subject!
+    if (this.selectedSubject) {
+      const timeKey = `focus_fox_study_time_${this.selectedSubject.id}`;
+      let timeStr = localStorage.getItem(timeKey) || '0m studied';
+      let currentMins = 0;
+      const matchHoursMins = timeStr.match(/(\d+)\s*h\s*(\d+)\s*m/i);
+      const matchHoursOnly = timeStr.match(/(\d+)\s*h/i);
+      const matchMinsOnly = timeStr.match(/(\d+)\s*m/i);
+      if (matchHoursMins) {
+        currentMins = parseInt(matchHoursMins[1], 10) * 60 + parseInt(matchHoursMins[2], 10);
+      } else if (matchHoursOnly) {
+        currentMins = parseInt(matchHoursOnly[1], 10) * 60;
+      } else if (matchMinsOnly) {
+        currentMins = parseInt(matchMinsOnly[1], 10);
+      }
+
+      currentMins = Math.max(0, currentMins + minutes);
+      const h = Math.floor(currentMins / 60);
+      const m = currentMins % 60;
+      const newTimeStr = h > 0 ? `${h}h ${m}m studied` : `${m}m studied`;
+      localStorage.setItem(timeKey, newTimeStr);
+    }
+
+    // Dispatch a custom event to notify UI to refresh dashboard views if loaded
+    window.dispatchEvent(new CustomEvent('study-history-updated'));
+  },
+
   toggleTopicCompletion(topicId) {
     const idx = this.completedTopics.indexOf(topicId);
     if (idx === -1) {
       this.completedTopics.push(topicId);
+      this.logStudyMinutes(30); // 30 minutes of study history logged
     } else {
       this.completedTopics.splice(idx, 1);
+      this.logStudyMinutes(-30); // Subtract 30 minutes of study history
     }
     localStorage.setItem('focus_fox_completed_topics', JSON.stringify(this.completedTopics));
   },

@@ -46,7 +46,7 @@ let lightboxCloseBtn;
 // Initialize app
 async function init() {
   console.log("Initializing Focus Fox Desktop App...");
-  
+
   // Find common DOM elements
   viewContainer = document.getElementById('view-container');
   headerTitleText = document.getElementById('header-title-text');
@@ -121,7 +121,7 @@ function bindEvents() {
       const isCollapsed = sidebar.classList.contains('collapsed');
       localStorage.setItem('focus_fox_sidebar_collapsed', isCollapsed);
     });
-    
+
     // Auto-restore collapsed state on load
     const savedCollapsed = localStorage.getItem('focus_fox_sidebar_collapsed') === 'true';
     if (savedCollapsed) {
@@ -226,6 +226,13 @@ function bindEvents() {
     updateSidebarActiveState(view);
     updateHeader(view, data);
     renderView(view, data);
+  });
+
+  // Study History Updated Listener
+  window.addEventListener('study-history-updated', () => {
+    if (store.currentView === 'subjects') {
+      renderSubjectsView();
+    }
   });
 
   // Lightbox Close
@@ -423,7 +430,7 @@ function updateHeader(view, data) {
   if (headerFilters) {
     if (store.selectedBranch && store.selectedSemester && view !== 'selection') {
       headerFilters.style.display = 'flex';
-      
+
       const branchSel = document.getElementById('header-branch-select');
       const semSel = document.getElementById('header-semester-select');
       if (branchSel && semSel) {
@@ -587,7 +594,7 @@ async function renderPdfView() {
 async function renderSelectionView() {
   // Show loading
   const branches = await supabaseClient.getBranches();
-  
+
   // Save in store
   store.branches = branches;
   populateHeaderFilters();
@@ -718,12 +725,12 @@ async function renderSelectionView() {
       googleBtn.disabled = true;
       const originalText = googleBtn.innerHTML;
       googleBtn.innerHTML = `<div class="spinner" style="width: 16px; height: 16px; margin: 0; display: inline-block; vertical-align: middle;"></div>&nbsp;&nbsp;Connecting...`;
-      
+
       setTimeout(() => {
         googleBtn.innerHTML = `✔️ Signed in with Google`;
         googleBtn.style.borderColor = '#2ecc71';
         googleBtn.style.color = '#2ecc71';
-        
+
         setTimeout(() => {
           googleBtn.innerHTML = originalText;
           googleBtn.disabled = false;
@@ -746,7 +753,7 @@ async function renderSelectionView() {
     const bId = branchSelect.value;
     const branch = branches.find(b => b.id === bId);
     const sem = parseInt(semesterSelect.value, 10);
-    
+
     store.saveSelection(branch, sem);
     navDashboard.style.display = 'flex';
     if (navSyllabus) navSyllabus.style.display = 'flex';
@@ -757,7 +764,7 @@ async function renderSelectionView() {
 // Helper to assign a color theme and SVG icon for subjects on the redesigned dashboard
 function getSubjectThemeAndIcon(subj, index) {
   const name = (subj.name || '').toLowerCase();
-  
+
   if (name.includes('intelligence') || name.includes('computational')) {
     return {
       themeClass: 'theme-purple',
@@ -789,13 +796,86 @@ function getSubjectThemeAndIcon(subj, index) {
       iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
     };
   }
-  
+
   const fallbacks = [
     { themeClass: 'theme-purple', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>` },
     { themeClass: 'theme-blue', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>` },
     { themeClass: 'theme-orange', iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v13M5 12h14"/></svg>` }
   ];
   return fallbacks[index % fallbacks.length];
+}
+
+// Helper to generate calendar heatmap HTML
+function generateCalendarHeatmapHtml(selectedRange = "This Month", isMini = false) {
+  // Current date/year mock anchored around June 27, 2026
+  const now = new Date(2026, 5, 27);
+  let year = now.getFullYear();
+  let month = now.getMonth();
+
+  if (selectedRange === "Last Month") {
+    month--;
+    if (month < 0) {
+      month = 11;
+      year--;
+    }
+  }
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthName = monthNames[month];
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay();
+
+  const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const headersHtml = weekdays.map(day => `<div class="calendar-weekday">${day}</div>`).join('');
+
+  const history = JSON.parse(localStorage.getItem('focus_fox_study_history') || '{}');
+
+  let cellsHtml = '';
+  // Empty padding cells before first day
+  for (let i = 0; i < firstDayIndex; i++) {
+    cellsHtml += `<div class="heatmap-cell empty"></div>`;
+  }
+
+  // Month days
+  for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    const studyMinutes = history[dateStr] || 0;
+
+    let lvl = 0;
+    if (studyMinutes === 0) lvl = 0;
+    else if (studyMinutes <= 15) lvl = 1;
+    else if (studyMinutes <= 30) lvl = 2;
+    else if (studyMinutes <= 60) lvl = 3;
+    else lvl = 4;
+
+    const tooltip = `${monthName} ${dayNum}, ${year}: ${studyMinutes}m studied (Level ${lvl} Activity)`;
+
+    if (isMini) {
+      cellsHtml += `
+        <div class="heatmap-cell ${lvl > 0 ? `level-${lvl}` : ''}" title="${tooltip}"></div>
+      `;
+    } else {
+      cellsHtml += `
+        <div class="heatmap-cell ${lvl > 0 ? `level-${lvl}` : ''}" data-day="${dayNum}" title="${tooltip}">
+          <span class="day-number">${dayNum}</span>
+        </div>
+      `;
+    }
+  }
+
+  // Pad to end of the week
+  const totalSlots = firstDayIndex + totalDays;
+  const paddingSlots = (7 - (totalSlots % 7)) % 7;
+  for (let i = 0; i < paddingSlots; i++) {
+    cellsHtml += `<div class="heatmap-cell empty"></div>`;
+  }
+
+  return {
+    headersHtml,
+    cellsHtml,
+    monthName,
+    year
+  };
 }
 
 // 2. Subjects View
@@ -811,7 +891,7 @@ async function renderSubjectsView() {
   // Load customizations from local storage
   const removedKey = `focus_fox_removed_subjects_${branch.id}_${semester}`;
   const addedKey = `focus_fox_added_subjects_${branch.id}_${semester}`;
-  
+
   const removedIds = JSON.parse(localStorage.getItem(removedKey) || '[]');
   const addedSubjects = JSON.parse(localStorage.getItem(addedKey) || '[]');
 
@@ -854,11 +934,11 @@ async function renderSubjectsView() {
     const topics = await supabaseClient.getTopics(subj.id);
     const totalTopics = topics.length;
     let completedCount = 0;
-    
+
     if (totalTopics > 0) {
       completedCount = topics.filter(t => store.isTopicCompleted(t.id)).length;
     }
-    
+
     totalTopicsCount += totalTopics;
     completedTopicsCount += completedCount;
     const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
@@ -883,7 +963,25 @@ async function renderSubjectsView() {
     };
   }));
 
-  const overallProgressPercentage = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 67;
+  const overallProgressPercentage = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0;
+
+  // Calculate dynamic total study time from subjects
+  let totalMinutes = 0;
+  subjectsData.forEach(subj => {
+    const timeStr = subj.studyTime || '';
+    const matchHoursMins = timeStr.match(/(\d+)\s*h\s*(\d+)\s*m/i);
+    const matchHoursOnly = timeStr.match(/(\d+)\s*h/i);
+    const matchMinsOnly = timeStr.match(/(\d+)\s*m/i);
+
+    if (matchHoursMins) {
+      totalMinutes += parseInt(matchHoursMins[1], 10) * 60 + parseInt(matchHoursMins[2], 10);
+    } else if (matchHoursOnly) {
+      totalMinutes += parseInt(matchHoursOnly[1], 10) * 60;
+    } else if (matchMinsOnly) {
+      totalMinutes += parseInt(matchMinsOnly[1], 10);
+    }
+  });
+  const totalHoursText = totalMinutes > 0 ? `${(totalMinutes / 60).toFixed(1)}h` : '0h';
 
   // Render left column stacked stats cards
   const statsLeftColumnHtml = `
@@ -905,7 +1003,7 @@ async function renderSubjectsView() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
         <div class="stat-text-info">
-          <span class="stat-number-val">32h</span>
+          <span class="stat-number-val">${totalHoursText}</span>
           <span class="stat-label-text">Study Time This Semester</span>
         </div>
       </div>
@@ -914,12 +1012,29 @@ async function renderSubjectsView() {
 
   // Render contribution activity heatmap grid (3 rows x 36 columns for elongated detailed view)
   const heatmapLevels = [];
+  const history = JSON.parse(localStorage.getItem('focus_fox_study_history') || '{}');
+  const now = new Date(2026, 5, 27); // Anchor date
+
   for (let i = 0; i < 108; i++) {
-    if (i % 7 === 0) heatmapLevels.push(3);
-    else if (i % 5 === 0) heatmapLevels.push(2);
-    else if (i % 3 === 0) heatmapLevels.push(1);
-    else if (i % 11 === 0) heatmapLevels.push(4);
-    else heatmapLevels.push(0);
+    // Calculate date for this cell (moving from i=0 to i=107)
+    // Cell 107 is today. Cell 0 is (today - 107 days)
+    const cellDate = new Date(now);
+    cellDate.setDate(now.getDate() - (107 - i));
+    
+    const year = cellDate.getFullYear();
+    const month = String(cellDate.getMonth() + 1).padStart(2, '0');
+    const day = String(cellDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    const studyMinutes = history[dateStr] || 0;
+    let lvl = 0;
+    if (studyMinutes === 0) lvl = 0;
+    else if (studyMinutes <= 15) lvl = 1;
+    else if (studyMinutes <= 30) lvl = 2;
+    else if (studyMinutes <= 60) lvl = 3;
+    else lvl = 4;
+
+    heatmapLevels.push(lvl);
   }
   let heatmapCellsHtml = '';
   heatmapLevels.forEach(lvl => {
@@ -961,13 +1076,19 @@ async function renderSubjectsView() {
     </div>
   `;
 
-  // Render streak square card
-  const streakHtml = `
-    <div class="streak-square-card fade-in" style="justify-content: center; align-items: center; display: flex; flex-direction: column;">
-      <div class="streak-text-info" style="margin-top: 0; display: flex; flex-direction: column; align-items: center;">
-        <span class="stat-number-val" style="font-size: 3.2rem; font-weight: 800; display: flex; align-items: center; gap: 4px; line-height: 1;">5<span style="font-size: 2.6rem;">🔥</span></span>
-        <span class="stat-label-text" style="display: block; text-align: center; margin-top: 6px; font-size: 0.82rem; font-weight: 700;">Day Streak</span>
-        <span class="stat-label-text" style="display: block; text-align: center; opacity: 0.7; font-size: 0.7rem; margin-top: 1px;">Keep it up!</span>
+  // Render mini calendar card (replacing streak square card)
+  const miniCalData = generateCalendarHeatmapHtml("This Month", true);
+  const miniCalendarCardHtml = `
+    <div class="streak-square-card fade-in" id="mini-calendar-trigger" style="justify-content: center; align-items: center; display: flex; flex-direction: column; cursor: pointer; padding: 10px 12px; gap: 4px;">
+      <div class="activity-header" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; border: none; background: transparent; padding: 0;">
+        <span class="activity-title" style="font-size: 0.75rem; font-weight: 700; color: var(--text);">Calendar</span>
+        <span class="activity-subtitle" style="font-size: 0.65rem; color: var(--subtext); font-weight: 600;">${miniCalData.monthName}</span>
+      </div>
+      <div class="heatmap-container mini-calendar" style="width: 100%; border: none; background: transparent; padding: 0;">
+        <div class="heatmap-grid" style="grid-template-columns: repeat(7, 12px); justify-content: center; gap: 3px; width: auto; margin: 0 auto;">
+          ${miniCalData.headersHtml}
+          ${miniCalData.cellsHtml}
+        </div>
       </div>
     </div>
   `;
@@ -1027,7 +1148,7 @@ async function renderSubjectsView() {
     <div class="subjects-dashboard-top">
       ${statsLeftColumnHtml}
       ${heatmapHtml}
-      ${streakHtml}
+      ${miniCalendarCardHtml}
     </div>
 
     <!-- Active Subjects Section -->
@@ -1071,7 +1192,7 @@ async function renderSubjectsView() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const sId = btn.getAttribute('data-id');
-      
+
       // If it is in locally added list, remove from locally added list
       let added = JSON.parse(localStorage.getItem(addedKey) || '[]');
       const isCustomSubj = added.some(s => s.id === sId);
@@ -1086,7 +1207,7 @@ async function renderSubjectsView() {
           localStorage.setItem(removedKey, JSON.stringify(removed));
         }
       }
-      
+
       renderSubjectsView();
     });
   });
@@ -1109,7 +1230,15 @@ async function renderSubjectsView() {
     heatmapTrigger.addEventListener('click', (e) => {
       // Don't trigger modal if dropdown is clicked
       if (e.target.closest('.activity-select')) return;
-      openHeatmapAnalyticsModal();
+      openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
+    });
+  }
+
+  // Attach click to Right Mini Calendar trigger
+  const miniCalTrigger = viewContainer.querySelector('#mini-calendar-trigger');
+  if (miniCalTrigger) {
+    miniCalTrigger.addEventListener('click', () => {
+      openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
   }
 }
@@ -1144,11 +1273,11 @@ async function openAddSubjectModal(filteredSubjects = []) {
       const bId = branchSelect.value;
       const sem = parseInt(semSelect.value, 10);
       const allSubjs = await supabaseClient.getSubjectsBySemester(bId, sem);
-      
+
       // Filter out subjects already shown on the dashboard
       const currentShowIds = new Set(filteredSubjects.map(s => s.id));
       const availableSubjs = allSubjs.filter(s => !currentShowIds.has(s.id));
-      
+
       if (availableSubjs.length === 0) {
         subjectSelect.innerHTML = `<option value="" disabled selected>-- No new subjects available --</option>`;
         submitBtn.disabled = true;
@@ -1177,7 +1306,7 @@ async function openAddSubjectModal(filteredSubjects = []) {
   const closeModal = () => {
     modal.style.display = 'none';
   };
-  
+
   closeBtn.onclick = closeModal;
   modal.onclick = (e) => {
     if (e.target === modal) closeModal();
@@ -1283,7 +1412,7 @@ async function openEnrolledSubjectsModal() {
       listContainer.querySelectorAll('.modal-subject-remove-btn').forEach(btn => {
         btn.onclick = () => {
           const sId = btn.getAttribute('data-id');
-          
+
           let added = JSON.parse(localStorage.getItem(addedKey) || '[]');
           const isCustomSubj = added.some(s => s.id === sId);
           if (isCustomSubj) {
@@ -1352,7 +1481,7 @@ async function openEnrolledSubjectsModal() {
 }
 
 // Function to handle Heatmap Analytics popup
-function openHeatmapAnalyticsModal() {
+function openHeatmapAnalyticsModal(subjectsData = [], overallProgressPercentage = 86) {
   const modal = document.getElementById('heatmap-analytics-modal');
   const closeBtn = document.getElementById('heatmap-close-btn');
 
@@ -1360,6 +1489,174 @@ function openHeatmapAnalyticsModal() {
 
   // Show modal
   modal.style.display = 'flex';
+
+  // Calculate total study time from subjects
+  let totalMinutes = 0;
+  if (Array.isArray(subjectsData) && subjectsData.length > 0) {
+    subjectsData.forEach(subj => {
+      const timeStr = subj.studyTime || '';
+      const matchHoursMins = timeStr.match(/(\d+)\s*h\s*(\d+)\s*m/i);
+      const matchHoursOnly = timeStr.match(/(\d+)\s*h/i);
+      const matchMinsOnly = timeStr.match(/(\d+)\s*m/i);
+
+      if (matchHoursMins) {
+        totalMinutes += parseInt(matchHoursMins[1], 10) * 60 + parseInt(matchHoursMins[2], 10);
+      } else if (matchHoursOnly) {
+        totalMinutes += parseInt(matchHoursOnly[1], 10) * 60;
+      } else if (matchMinsOnly) {
+        totalMinutes += parseInt(matchMinsOnly[1], 10);
+      }
+    });
+  }
+
+  const totalHoursVal = (totalMinutes / 60).toFixed(1);
+  const consistencyIndex = overallProgressPercentage !== undefined ? overallProgressPercentage : 0;
+
+  // Calculate longest study streak dynamically from history
+  let streakDays = 0;
+  try {
+    const historyObj = JSON.parse(localStorage.getItem('focus_fox_study_history') || '{}');
+    const activeDates = Object.keys(historyObj)
+      .filter(dateStr => historyObj[dateStr] > 0)
+      .map(dateStr => {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+        return new Date(dateStr);
+      })
+      .filter(d => !isNaN(d.getTime()))
+      .sort((a, b) => a - b);
+
+    let maxStreak = 0;
+    let currentStreak = 0;
+    let lastDate = null;
+
+    activeDates.forEach(date => {
+      date.setHours(0, 0, 0, 0);
+      if (lastDate === null) {
+        currentStreak = 1;
+      } else {
+        const diffTime = date.getTime() - lastDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          currentStreak++;
+        } else if (diffDays > 1) {
+          if (currentStreak > maxStreak) {
+            maxStreak = currentStreak;
+          }
+          currentStreak = 1;
+        }
+      }
+      lastDate = date;
+    });
+
+    if (currentStreak > maxStreak) {
+      maxStreak = currentStreak;
+    }
+    streakDays = maxStreak;
+  } catch (err) {
+    console.error('Error calculating streak:', err);
+    streakDays = 0;
+  }
+
+  // Update modal stat displays
+  const hoursEl = modal.querySelector('.analytics-grid > div:nth-child(1) .stat-number-val');
+  if (hoursEl) hoursEl.textContent = `${totalHoursVal} Hours`;
+
+  const consistencyEl = modal.querySelector('.analytics-grid > div:nth-child(2) .stat-number-val');
+  if (consistencyEl) consistencyEl.textContent = `${consistencyIndex}%`;
+
+  const streakEl = modal.querySelector('.analytics-grid > div:nth-child(3) .stat-number-val');
+  if (streakEl) streakEl.textContent = `${streakDays} Days`;
+
+  // Weekly trend distribution
+  const trendContainer = modal.querySelector('.modal-body > div:last-child > div');
+  if (trendContainer) {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const ratios = [0.15, 0.1, 0.2, 0.05, 0.15, 0.25, 0.1];
+    trendContainer.innerHTML = days.map((day, idx) => {
+      const mins = Math.round(totalMinutes * ratios[idx]);
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      const timeDisplay = h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`;
+      return `<span>${day.slice(0, 3)}: ${timeDisplay}</span>`;
+    }).join('');
+  }
+
+  // Ensure calendar container exists in modal-body
+  let calendarContainer = document.getElementById('modal-calendar-container');
+  if (!calendarContainer) {
+    const modalBody = modal.querySelector('.modal-body');
+    if (modalBody) {
+      calendarContainer = document.createElement('div');
+      calendarContainer.id = 'modal-calendar-container';
+      calendarContainer.style.background = 'var(--bg)';
+      calendarContainer.style.border = '1px solid var(--border)';
+      calendarContainer.style.borderRadius = 'var(--radius-md)';
+      calendarContainer.style.padding = '16px';
+      calendarContainer.style.display = 'flex';
+      calendarContainer.style.flexDirection = 'column';
+      calendarContainer.style.gap = '12px';
+      
+      // Insert right after the top analytics-grid
+      const analyticsGrid = modalBody.querySelector('.analytics-grid');
+      if (analyticsGrid && analyticsGrid.nextSibling) {
+        modalBody.insertBefore(calendarContainer, analyticsGrid.nextSibling);
+      } else {
+        modalBody.appendChild(calendarContainer);
+      }
+    }
+  }
+
+  const renderModalCalendar = (range = "This Month") => {
+    if (!calendarContainer) return;
+    const data = generateCalendarHeatmapHtml(range, false); // false = large calendar with day numbers
+    
+    calendarContainer.innerHTML = `
+      <div class="activity-header" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border: none; background: transparent; padding: 0;">
+        <div style="display: flex; flex-direction: column;">
+          <span class="activity-title" style="font-size: 0.95rem; font-weight: 700; color: var(--text);">Study Activity Heatmap</span>
+          <span class="activity-subtitle" style="font-size: 0.78rem; color: var(--subtext); margin-top: 2px;">${data.monthName} ${data.year}</span>
+        </div>
+        <select class="activity-select" id="modal-activity-select" style="padding: 4px 8px; font-size: 0.78rem;">
+          <option ${range === 'This Month' ? 'selected' : ''}>This Month</option>
+          <option ${range === 'Last Month' ? 'selected' : ''}>Last Month</option>
+        </select>
+      </div>
+      
+      <div class="heatmap-container modal-calendar" style="border: none; background: transparent; padding: 0;">
+        <div class="heatmap-wrapper">
+          <div class="heatmap-grid modal-calendar-grid">
+            ${data.headersHtml}
+            ${data.cellsHtml}
+          </div>
+        </div>
+        <div class="heatmap-legend" style="margin-top: 6px;">
+          <span>Less</span>
+          <div class="legend-cells">
+            <div class="heatmap-cell"></div>
+            <div class="heatmap-cell level-1"></div>
+            <div class="heatmap-cell level-2"></div>
+            <div class="heatmap-cell level-3"></div>
+            <div class="heatmap-cell level-4"></div>
+          </div>
+          <span>More</span>
+        </div>
+      </div>
+    `;
+
+    // Listen to dropdown changes inside the modal
+    const modalSelect = document.getElementById('modal-activity-select');
+    if (modalSelect) {
+      modalSelect.onchange = (e) => {
+        renderModalCalendar(e.target.value);
+      };
+    }
+  };
+
+  // Initial render
+  renderModalCalendar("This Month");
 
   // Close handlers
   const closeModal = () => {
@@ -1416,17 +1713,17 @@ async function renderSyllabusView() {
   // Render sections
   const sectionsHtml = await Promise.all(semestersPresent.map(async (sem) => {
     const semSubjects = subjectsBySem[sem];
-    
+
     // Fetch progress percentages in parallel
     const subjectCardsHtml = await Promise.all(semSubjects.map(async (subj) => {
       const topics = await supabaseClient.getTopics(subj.id);
       const totalTopics = topics.length;
       let completedCount = 0;
-      
+
       if (totalTopics > 0) {
         completedCount = topics.filter(t => store.isTopicCompleted(t.id)).length;
       }
-      
+
       const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
       return `
@@ -1494,7 +1791,7 @@ async function renderSyllabusView() {
       filterBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const targetSem = btn.getAttribute('data-semester');
-      
+
       const sections = viewContainer.querySelectorAll('.semester-section');
       sections.forEach(sec => {
         if (targetSem === 'all' || sec.getAttribute('data-semester') === targetSem) {
@@ -1635,7 +1932,7 @@ async function renderTopicsTab(container) {
       const isCompleted = store.isTopicCompleted(topic.id);
       const score = topic.importanceScore || 0;
       const percentage = Math.min(100, Math.max(0, Math.round(score)));
-      
+
       // Severity tags based on percentage
       let urgencyText = 'Low Importance';
       if (percentage >= 75) {
@@ -1703,13 +2000,13 @@ async function renderTopicsTab(container) {
     topicsListContainer.querySelectorAll('.topic-header').forEach(header => {
       header.addEventListener('click', (e) => {
         if (e.target.closest('.topic-checkbox')) return;
-        
+
         const card = header.closest('.topic-card');
         const isOpen = card.classList.contains('open');
-        
+
         // Close others
         topicsListContainer.querySelectorAll('.topic-card').forEach(c => c.classList.remove('open'));
-        
+
         if (!isOpen) {
           card.classList.add('open');
           const topicId = card.getAttribute('data-id');
@@ -1777,7 +2074,7 @@ async function loadTopicResources(topicId) {
     resources.forEach(res => {
       // Determine Icon based on resource type
       let icon = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
-      
+
       itemsHtml += `
         <a href="${res.url}" target="_blank" class="resource-link-card">
           <div class="resource-info">
@@ -1842,7 +2139,7 @@ async function renderDriveFolderContents(container, folderId) {
   });
 
   let filesGridHtml = '';
-  
+
   if (files.length === 0) {
     filesGridHtml = `
       <div class="drive-empty" style="grid-column: 1 / -1;">
@@ -1862,7 +2159,7 @@ async function renderDriveFolderContents(container, folderId) {
 
     files.forEach(file => {
       const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
-      
+
       let icon = '';
       if (isFolder) {
         icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
@@ -1879,7 +2176,7 @@ async function renderDriveFolderContents(container, folderId) {
         </div>
       `;
     }
-  );
+    );
   }
 
   container.innerHTML = `
@@ -1896,7 +2193,7 @@ async function renderDriveFolderContents(container, folderId) {
     item.addEventListener('click', async () => {
       const idx = parseInt(item.getAttribute('data-idx'), 10);
       if (idx === drivePathStack.length - 1) return; // Ignore clicking current directory
-      
+
       // Trim path stack to selected level
       drivePathStack = drivePathStack.slice(0, idx + 1);
       const clickedId = item.getAttribute('data-id');
@@ -2035,7 +2332,7 @@ async function renderProgressTab(container) {
     box.addEventListener('click', () => {
       const tId = box.getAttribute('data-topic-id');
       store.toggleTopicCompletion(tId);
-      
+
       // Reload tab to update stats and states instantly
       renderProgressTab(container);
     });
@@ -2136,7 +2433,7 @@ async function renderQuestionListView() {
 
   const filterQuestions = () => {
     const query = searchInput.value.toLowerCase().trim();
-    
+
     // Update "All" button active state based on whether any filter is active
     const isFiltered = query !== '' || activeType !== 'all' || activeDiff !== 'all' || activeYearValue !== 'all';
     if (isFiltered) {
@@ -2149,21 +2446,21 @@ async function renderQuestionListView() {
     let filtered = questions.filter(q => {
       const matchesSearch = q.question_text.toLowerCase().includes(query);
       const matchesDiff = activeDiff === 'all' || q.difficulty.toLowerCase() === activeDiff;
-      
+
       let matchesType = true;
       if (activeType !== 'all') {
-        matchesType = q.pyqSources && q.pyqSources.some(src => 
+        matchesType = q.pyqSources && q.pyqSources.some(src =>
           src.exam_type && src.exam_type.toLowerCase().replace(/[\s-_]/g, '').includes(activeType)
         );
       }
 
       let matchesYear = true;
       if (activeYearValue !== 'all' && activeYearValue !== 'asc' && activeYearValue !== 'desc') {
-        matchesYear = q.pyqSources && q.pyqSources.some(src => 
+        matchesYear = q.pyqSources && q.pyqSources.some(src =>
           src.year && src.year.toString() === activeYearValue
         );
       }
-      
+
       return matchesSearch && matchesDiff && matchesType && matchesYear;
     });
 
@@ -2393,7 +2690,7 @@ async function renderQuestionDetailView() {
         solution = await aiService.solveQuestion(question.question_text);
         aiCache.set(question.id, solution);
       }
-      
+
       // Render markdown using Marked
       const htmlContent = window.marked.parse(solution);
       responseArea.innerHTML = `<div class="ai-solver-content">${htmlContent}</div>`;
@@ -2442,26 +2739,26 @@ async function renderAlgoTopicsView() {
 
   // SVG icon map for well-known topics
   const topicIcons = {
-    'Array':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="17" y1="5" x2="17" y2="19"/></svg>`,
-    'String':             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h6"/></svg>`,
-    'Linked List':        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
-    'Tree':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M5 8h14M8 8v2a4 4 0 0 0 8 0V8"/><circle cx="5" cy="17" r="3"/><circle cx="12" cy="17" r="3"/><circle cx="19" cy="17" r="3"/></svg>`,
-    'Graph':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><line x1="7" y1="5" x2="17" y2="5"/><line x1="5.7" y1="7" x2="11" y2="17"/><line x1="18.3" y1="7" x2="13" y2="17"/></svg>`,
-    'Dynamic Programming':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>`,
-    'Recursion':          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>`,
-    'Searching':          `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-    'Sorting':            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/></svg>`,
-    'Stack':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
-    'Queue':              `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
-    'Hash Map':           `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
-    'Binary Search':      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
-    'Two Pointers':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`,
-    'Sliding Window':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="10" height="10" rx="1"/><line x1="16" y1="7" x2="22" y2="7"/><line x1="16" y1="12" x2="22" y2="12"/><line x1="16" y1="17" x2="22" y2="17"/></svg>`,
-    'Backtracking':       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>`,
-    'Greedy':             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
-    'Heap':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19h20L12 2z"/><line x1="12" y1="8" x2="12" y2="14"/></svg>`,
-    'Trie':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="4" r="2"/><circle cx="5" cy="14" r="2"/><circle cx="12" cy="14" r="2"/><circle cx="19" cy="14" r="2"/><line x1="12" y1="6" x2="5" y2="12"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="6" x2="19" y2="12"/></svg>`,
-    'Math':               `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+    'Array': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="7" y1="5" x2="7" y2="19"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="17" y1="5" x2="17" y2="19"/></svg>`,
+    'String': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h6"/></svg>`,
+    'Linked List': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="12" r="3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+    'Tree': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6M5 8h14M8 8v2a4 4 0 0 0 8 0V8"/><circle cx="5" cy="17" r="3"/><circle cx="12" cy="17" r="3"/><circle cx="19" cy="17" r="3"/></svg>`,
+    'Graph': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><line x1="7" y1="5" x2="17" y2="5"/><line x1="5.7" y1="7" x2="11" y2="17"/><line x1="18.3" y1="7" x2="13" y2="17"/></svg>`,
+    'Dynamic Programming': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>`,
+    'Recursion': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>`,
+    'Searching': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    'Sorting': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/></svg>`,
+    'Stack': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+    'Queue': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+    'Hash Map': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>`,
+    'Binary Search': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+    'Two Pointers': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>`,
+    'Sliding Window': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="10" height="10" rx="1"/><line x1="16" y1="7" x2="22" y2="7"/><line x1="16" y1="12" x2="22" y2="12"/><line x1="16" y1="17" x2="22" y2="17"/></svg>`,
+    'Backtracking': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>`,
+    'Greedy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+    'Heap': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19h20L12 2z"/><line x1="12" y1="8" x2="12" y2="14"/></svg>`,
+    'Trie': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="4" r="2"/><circle cx="5" cy="14" r="2"/><circle cx="12" cy="14" r="2"/><circle cx="19" cy="14" r="2"/><line x1="12" y1="6" x2="5" y2="12"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="6" x2="19" y2="12"/></svg>`,
+    'Math': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
   };
   const defaultIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
 
@@ -2495,7 +2792,7 @@ async function renderAlgoTopicsView() {
 
   // Helper: adjust a hex color brightness (positive = lighter, negative = darker)
   function shiftColor(hex, amt) {
-    let c = parseInt(hex.replace('#',''), 16);
+    let c = parseInt(hex.replace('#', ''), 16);
     let r = Math.min(255, Math.max(0, (c >> 16) + amt));
     let g = Math.min(255, Math.max(0, ((c >> 8) & 0xFF) + amt));
     let b = Math.min(255, Math.max(0, (c & 0xFF) + amt));
@@ -2521,7 +2818,7 @@ async function renderAlgoTopicsView() {
       const segmentLength = percentage * usableCircumference;
       const baseColor = colors[i % colors.length];
       const highlight = shiftColor(baseColor, 60);
-      const shadow    = shiftColor(baseColor, -40);
+      const shadow = shiftColor(baseColor, -40);
 
       // Glow filter per segment
       chartDefsHtml += `
@@ -2705,9 +3002,9 @@ async function renderAlgoQuestionsView() {
   const questions = await supabaseClient.getLeetcodeByTopic(topic);
 
   // Case-insensitive filter — Supabase stores 'Easy'/'Medium'/'Hard'
-  const easy   = questions.filter(q => q.difficulty?.toLowerCase() === 'easy');
+  const easy = questions.filter(q => q.difficulty?.toLowerCase() === 'easy');
   const medium = questions.filter(q => q.difficulty?.toLowerCase() === 'medium');
-  const hard   = questions.filter(q => q.difficulty?.toLowerCase() === 'hard');
+  const hard = questions.filter(q => q.difficulty?.toLowerCase() === 'hard');
 
   function renderCol(qs, label, cls) {
     if (qs.length === 0) {
@@ -2760,7 +3057,7 @@ async function renderAlgoQuestionsView() {
       checkbox.addEventListener('change', () => {
         const qId = checkbox.getAttribute('data-id');
         store.toggleQuestionSolved(qId);
-        
+
         const qNameSpan = row.querySelector('.algo-q-name');
         if (qNameSpan) {
           if (checkbox.checked) {
@@ -3074,14 +3371,14 @@ async function renderAlgoSolutionView() {
       function updateCodeDisplay() {
         // Get solutions for the active language
         const langSolutions = dbSolutions.filter(s => s.language === activeLang);
-        
+
         // Safety check if activeSubIndex is out of range
         if (activeSubIndex >= langSolutions.length) {
           activeSubIndex = 0;
         }
 
         const activeSol = langSolutions[activeSubIndex];
-        
+
         // Update Heading
         titleEl.textContent = activeSol.heading;
 
@@ -3114,7 +3411,7 @@ async function renderAlgoSolutionView() {
               Sol ${index + 1}
             </button>
           `).join('');
-          
+
           // Wire up sub-tab click events
           subTabsContainer.querySelectorAll('.custom-sol-sub-tab').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -3184,7 +3481,7 @@ async function renderAlgoSolutionView() {
       contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           selectedTheme = e.currentTarget.getAttribute('data-theme');
-          
+
           // Update theme active classes
           contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(b => {
             if (b === e.currentTarget) {
@@ -3193,7 +3490,7 @@ async function renderAlgoSolutionView() {
               b.classList.remove('active');
             }
           });
-          
+
           // Sync dropdown
           const dropdown = document.getElementById('custom-sol-theme-dropdown');
           if (dropdown) dropdown.value = selectedTheme;
@@ -3207,7 +3504,7 @@ async function renderAlgoSolutionView() {
       if (themeDropdown) {
         themeDropdown.addEventListener('change', (e) => {
           selectedTheme = e.target.value;
-          
+
           // Sync buttons
           contentArea.querySelectorAll('.custom-sol-theme-btn').forEach(b => {
             if (b.getAttribute('data-theme') === selectedTheme) {
@@ -3348,10 +3645,10 @@ async function renderLeetcodeWebview() {
     }
 
     const diffLower = (data.difficulty || '').toLowerCase();
-    const diffClass = diffLower === 'easy' ? 'badge-easy' 
-                    : diffLower === 'medium' ? 'badge-medium' 
-                    : diffLower === 'hard' ? 'badge-hard'
-                    : 'badge-easy';
+    const diffClass = diffLower === 'easy' ? 'badge-easy'
+      : diffLower === 'medium' ? 'badge-medium'
+        : diffLower === 'hard' ? 'badge-hard'
+          : 'badge-easy';
 
     const topicTagsHtml = (data.topicTags || []).map(t =>
       `<span style="background:var(--bg); border:1px solid var(--border); padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600; color:var(--subtext);">${t.name}</span>`
@@ -3366,7 +3663,7 @@ async function renderLeetcodeWebview() {
         <div style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
           ${data.hints.map((h, i) => `
             <div style="padding:12px 16px; background:var(--bg); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--text); line-height:1.6;">
-              <span style="font-weight:700; color:var(--primary); margin-right:6px;">Hint ${i+1}:</span>
+              <span style="font-weight:700; color:var(--primary); margin-right:6px;">Hint ${i + 1}:</span>
               ${h}
             </div>
           `).join('')}
@@ -3634,16 +3931,16 @@ async function initMusicPlayer() {
   // Load track helper
   function loadTrack(index) {
     if (playlist.length === 0) return;
-    
+
     currentTrackIndex = index;
     const trackPath = playlist[currentTrackIndex];
-    
+
     // Convert local system file path to WebView loadable URL if it's not a remote URL
     let src = trackPath;
     if (window.__TAURI__ && !trackPath.startsWith('http')) {
       src = window.__TAURI__.core.convertFileSrc(trackPath);
     }
-    
+
     audio.src = src;
     audio.load();
     progressFill.style.width = '0%';
@@ -3653,7 +3950,7 @@ async function initMusicPlayer() {
   // Play/Pause helper
   function togglePlay() {
     if (playlist.length === 0) return;
-    
+
     if (isPlaying) {
       audio.pause();
     } else {
@@ -3770,10 +4067,10 @@ function initStopwatch() {
     const hrs = Math.floor(stopwatchSeconds / 3600);
     const mins = Math.floor((stopwatchSeconds % 3600) / 60);
     const secs = stopwatchSeconds % 60;
-    
+
     const displayMins = mins < 10 ? `0${mins}` : mins;
     const displaySecs = secs < 10 ? `0${secs}` : secs;
-    
+
     display.textContent = hrs > 0 ? `${hrs}:${displayMins}:${displaySecs}` : `${displayMins}:${displaySecs}`;
   }
 
@@ -3791,6 +4088,9 @@ function initStopwatch() {
       stopwatchInterval = setInterval(() => {
         stopwatchSeconds++;
         updateStopwatchUI();
+        if (stopwatchSeconds % 60 === 0) {
+          store.logStudyMinutes(1);
+        }
       }, 1000);
       isStopwatchRunning = true;
       if (playBtn) {
