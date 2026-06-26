@@ -5433,4 +5433,114 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   fill: none;
 }
 
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-item-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  align-items: flex-start;
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition-normal);
+}
+
+.feature-item-card:hover {
+  transform: translateY(-1px);
+}
+
+.feature-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.feature-icon-wrapper.pyq {
+  background: rgba(211, 125, 62, 0.1);
+  color: var(--primary);
+}
+
+.feature-icon-wrapper.dsa {
+  background: rgba(139, 166, 130, 0.1);
+  color: var(--secondary);
+}
+
+.feature-icon-wrapper.feed {
+  background: rgba(224, 142, 157, 0.1);
+  color: var(--accent);
+}
+
+.feature-icon-wrapper.tools {
+  background: rgba(255, 159, 10, 0.15);
+  color: #FF9F0A;
+}
+
+.feature-icon-wrapper svg {
+  width: 20px;
+  height: 20px;
+}
+
+.feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feature-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.feature-desc {
+  font-size: 12px;
+  color: var(--subtext);
+  font-family: var(--font-sans);
+  line-height: 1.4;
+}
+
+.about-footer {
+  margin-top: 12px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.about-version {
+  font-size: 12px;
+  color: var(--subtext);
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.about-copyright {
+  font-size: 11px;
+  color: var(--subtext);
+  opacity: 0.8;
+  font-family: var(--font-sans);
+}
+
+
 
