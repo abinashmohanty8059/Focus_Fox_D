@@ -4203,12 +4203,12 @@ async function renderAlgoTopicsView() {
   const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444', '#06b6d4', '#a855f7'];
 
   // --- RING CHART CONFIG ---
-  const svgSize = 340;
-  const center = svgSize / 2;   // 170
-  const radius = 120;
-  const strokeW = 36;
-  const circumference = 2 * Math.PI * radius; // ~753.98
-  const gapSize = 38; // large gap so round caps never overlap
+  const svgSize = 400;
+  const center = svgSize / 2;   // 200
+  const radius = 145;
+  const strokeW = 38;
+  const circumference = 2 * Math.PI * radius; // ~911
+  const gapSize = 42; // large gap so round caps never overlap
 
   // Helper: adjust a hex color brightness (positive = lighter, negative = darker)
   function shiftColor(hex, amt) {
@@ -4331,25 +4331,32 @@ async function renderAlgoTopicsView() {
       <!-- Right Side: Analytics and Companies Stack -->
       <div style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 20px; z-index: 5;">
         <!-- Container 1: Progress Analytics -->
-        <div class="algo-analytics-panel fade-in" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--card-shadow); display: flex; flex-direction: column; align-items: center; gap: 24px;">
-           <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text); align-self: flex-start; margin: 0;">Progress Analytics</h3>
+        <div class="algo-analytics-panel fade-in" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 24px 22px 24px; box-shadow: var(--card-shadow); display: flex; flex-direction: column; align-items: center; gap: 8px;">
+           <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text); font-family: var(--font-sans); letter-spacing: -0.3px; align-self: center; text-align: center; margin: 0 0 4px 0;">Progress Analytics</h3>
            
            <!-- Big modern liquid doughnut chart -->
-           <div class="ring-chart-wrapper">
-             <!-- Animated glow pulse -->
-             <div class="ring-glow-pulse"></div>
-             <!-- Liquid shimmer overlay -->
-             <div class="ring-liquid-shimmer"></div>
-             <!-- SVG Ring -->
-             <svg class="ring-chart-svg" viewBox="0 0 ${svgSize} ${svgSize}" style="position: relative; z-index: 1;">
-               ${chartSegmentsHtml}
-             </svg>
-             <!-- Center label -->
-             <div class="ring-center-label">
-               <span class="ring-center-count">${totalSolved}</span>
-               <span class="ring-center-subtitle">Solved</span>
-             </div>
-           </div>
+           <div class="ring-chart-wrapper" style="margin: 0 auto;">
+              <!-- Animated glow pulse -->
+              <div class="ring-glow-pulse"></div>
+              <!-- Liquid shimmer overlay -->
+              <div class="ring-liquid-shimmer"></div>
+              <!-- SVG Ring -->
+              <svg class="ring-chart-svg" viewBox="0 0 ${svgSize} ${svgSize}" style="position: relative; z-index: 1;">
+                ${chartSegmentsHtml}
+              </svg>
+              <!-- Center label with Fox score animation -->
+              <div class="ring-center-label">
+                <div class="ring-center-fox" style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center;">
+                  <lottie-player src="/animation/Fox_score.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Summary stats below the graph -->
+            <div class="algo-analytics-summary" style="text-align: center; margin-top: -6px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span style="font-size: 0.8rem; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 1.2px;">Total Questions Solved:</span>
+              <span style="font-size: 1.35rem; font-weight: 900; color: var(--text); line-height: 1;">${totalSolved}</span>
+            </div>
         </div>
 
         <!-- Container 2: Target Companies -->
