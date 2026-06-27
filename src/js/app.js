@@ -185,7 +185,16 @@ function bindEvents() {
 
   // Header Back Button
   headerBackBtn.addEventListener('click', () => {
-    store.goBack();
+    const view = store.currentView;
+    if (view === 'subject-dashboard') {
+      store.navigateTo('subjects');
+    } else if (view === 'algo-questions') {
+      store.navigateTo('algo-topics');
+    } else if (view === 'algo-solution') {
+      store.navigateTo('algo-questions');
+    } else {
+      store.goBack();
+    }
   });
 
   // View on LeetCode Header Button
@@ -370,8 +379,9 @@ function updateSidebarActiveState(view) {
 // Update header titles and back button visibility
 function updateHeader(view, data) {
   const q = store.algoSelectedQuestion;
-  // Back button visibility
-  if (store.viewHistory.length > 0 && view !== 'selection') {
+  // Back button visibility (scoped strictly to hierarchical sub-views)
+  const isSubView = view === 'subject-dashboard' || view === 'algo-questions' || view === 'algo-solution';
+  if (isSubView) {
     headerBackBtn.style.display = 'flex';
   } else {
     headerBackBtn.style.display = 'none';
