@@ -1403,8 +1403,14 @@ async function initScratchMusicPlayer() {
       console.warn("Could not load local music files, using web lofi presets:", err);
     }
 
+    // Filter out deleted tracks
+    const deletedTracks = JSON.parse(localStorage.getItem('focus_fox_deleted_tracks') || '[]');
+    scratchPlaylist = scratchPlaylist.filter(track => !deletedTracks.includes(track.name));
+
     // Load first track initially
-    loadScratchTrack(0, false);
+    if (scratchPlaylist.length > 0) {
+      loadScratchTrack(0, false);
+    }
   }
 
   // Bind controls for Dashboard Widget Player
@@ -1438,11 +1444,13 @@ async function initScratchMusicPlayer() {
 
     // Dashboard card components update
     if (dPlayBtn) dPlayBtn.innerHTML = playSvgHtml;
-    if (dTrackName) dTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
+    
+    const currentTrack = scratchPlaylist[scratchCurrentIndex];
+    if (dTrackName) dTrackName.textContent = currentTrack ? currentTrack.name : "No tracks loaded";
 
     // Bottom sliding drawer components update
     if (wPlayBtn) wPlayBtn.innerHTML = drawerPlaySvgHtml;
-    if (wTrackName) wTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
+    if (wTrackName) wTrackName.textContent = currentTrack ? currentTrack.name : "No tracks loaded";
   }
 
   function loadScratchTrack(index, autoplay = true) {
@@ -1562,6 +1570,109 @@ async function initScratchMusicPlayer() {
       scratchAudioObj.volume = wVolumeSlider.value;
     });
   }
+
+  // Playlist Popover toggle and rendering
+  const playlistBtn = document.getElementById('drawer-playlist-btn');
+  const playlistPopover = document.getElementById('drawer-playlist-popover');
+  const closePopoverBtn = document.getElementById('close-playlist-popover-btn');
+
+  function renderPlaylistItems() {
+    const container = document.getElementById('drawer-playlist-items');
+    if (!container) return;
+    
+    if (scratchPlaylist.length === 0) {
+      container.innerHTML = `<div style="padding: 16px; text-align: center; font-size: 0.78rem; color: var(--subtext);">No songs available</div>`;
+      return;
+    }
+    
+    container.innerHTML = scratchPlaylist.map((track, idx) => {
+      const isActive = idx === scratchCurrentIndex;
+      return `
+        <div class="playlist-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; cursor: pointer; transition: background 0.15s; background: ${isActive ? 'var(--surface-active)' : 'transparent'}; border-left: 2px solid ${isActive ? 'var(--primary)' : 'transparent'};" data-idx="${idx}">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;" class="play-track-trigger">
+            <span style="font-size: 0.8rem; color: ${isActive ? 'var(--primary)' : 'var(--text)'}; font-weight: ${isActive ? '600' : '500'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(track.name)}</span>
+          </div>
+          <button class="delete-track-btn" style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.85rem; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; justify-content: center;" title="Delete Song" data-name="${escapeHtml(track.name)}" data-idx="${idx}">
+            &times;
+          </button>
+        </div>
+      `;
+    }).join('');
+    
+    container.querySelectorAll('.playlist-item').forEach(item => {
+      const trigger = item.querySelector('.play-track-trigger');
+      if (trigger) {
+        trigger.addEventListener('click', () => {
+          const idx = parseInt(item.getAttribute('data-idx'), 10);
+          loadScratchTrack(idx, true);
+          renderPlaylistItems();
+        });
+      }
+      
+      const delBtn = item.querySelector('.delete-track-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const name = delBtn.getAttribute('data-name');
+          const idx = parseInt(delBtn.getAttribute('data-idx'), 10);
+          
+          if (confirm(`Are you sure you want to delete "${name}" from your playlist?`)) {
+            let deletedTracks = JSON.parse(localStorage.getItem('focus_fox_deleted_tracks') || '[]');
+            if (!deletedTracks.includes(name)) {
+              deletedTracks.push(name);
+              localStorage.setItem('focus_fox_deleted_tracks', JSON.stringify(deletedTracks));
+            }
+            
+            const wasPlaying = scratchIsPlaying;
+            if (idx === scratchCurrentIndex) {
+              scratchAudioObj.pause();
+              scratchIsPlaying = false;
+              updatePlayerUI();
+            }
+            
+            scratchPlaylist = scratchPlaylist.filter((_, i) => i !== idx);
+            
+            if (scratchCurrentIndex >= scratchPlaylist.length) {
+              scratchCurrentIndex = Math.max(0, scratchPlaylist.length - 1);
+            }
+            
+            if (scratchPlaylist.length > 0) {
+              loadScratchTrack(scratchCurrentIndex, wasPlaying);
+            } else {
+              const dTrackName = document.getElementById('scratch-track-name');
+              const wTrackName = document.getElementById('drawer-track-name');
+              if (dTrackName) dTrackName.textContent = "No songs available";
+              if (wTrackName) wTrackName.textContent = "No songs available";
+            }
+            
+            renderPlaylistItems();
+          }
+        });
+      }
+    });
+  }
+
+  if (playlistBtn && playlistPopover) {
+    playlistBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = playlistPopover.style.display === 'none';
+      playlistPopover.style.display = isHidden ? 'flex' : 'none';
+      if (isHidden) renderPlaylistItems();
+    });
+  }
+
+  if (closePopoverBtn && playlistPopover) {
+    closePopoverBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playlistPopover.style.display = 'none';
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (playlistPopover && playlistPopover.style.display !== 'none' && !playlistPopover.contains(e.target) && e.target !== playlistBtn) {
+      playlistPopover.style.display = 'none';
+    }
+  });
 
   // Update visual state immediately
   updatePlayerUI();

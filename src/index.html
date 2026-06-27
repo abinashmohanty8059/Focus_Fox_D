@@ -260,11 +260,23 @@
       </div>
     </div>
 
-    <!-- Right section: Volume control -->
-    <div style="display: flex; align-items: center; gap: 8px; width: 140px; justify-content: flex-end;">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--subtext); flex-shrink: 0;"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke-linecap="round"/></svg>
-      <input type="range" id="drawer-volume-slider" min="0" max="1" step="0.05" value="0.7" style="width: 80px; accent-color: var(--primary); cursor: pointer; height: 4px; background: var(--bg); border-radius: 2px;" />
+    <!-- Right section: Volume & Playlist control -->
+    <div style="display: flex; align-items: center; gap: 12px; width: 220px; justify-content: flex-end; position: relative;">
+      <button class="tool-tile-btn" id="drawer-playlist-btn" title="View Playlist" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; height: 28px; background: var(--bg); border: 1px solid var(--border); color: var(--text);">🎶 Playlist</button>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--subtext); flex-shrink: 0;"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke-linecap="round"/></svg>
+        <input type="range" id="drawer-volume-slider" min="0" max="1" step="0.05" value="0.7" style="width: 80px; accent-color: var(--primary); cursor: pointer; height: 4px; background: var(--bg); border-radius: 2px;" />
+      </div>
     </div>
+  </div>
+
+  <!-- Playlist Popover Panel (Global fixed body child to avoid parent clipping and coordinate shifts) -->
+  <div id="drawer-playlist-popover" style="display: none; position: fixed; bottom: 90px; right: 24px; width: 320px; max-height: 280px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--card-shadow); z-index: 10000; flex-direction: column; overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg);">
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--text);">Focus Tracks</span>
+      <span style="font-size: 0.9rem; color: var(--subtext); cursor: pointer; font-weight: bold; line-height: 1;" id="close-playlist-popover-btn">&times;</span>
+    </div>
+    <div id="drawer-playlist-items" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding: 6px 0;"></div>
   </div>
 
   <!-- Add Subject Custom Modal -->
