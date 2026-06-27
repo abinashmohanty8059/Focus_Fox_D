@@ -464,7 +464,7 @@ aside.sidebar {
 }
 
 .sidebar-brand {
-  padding: 24px 20px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -475,7 +475,7 @@ aside.sidebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 20px 10px 20px;
+  padding: 4px 20px 8px 20px;
   border-bottom: 1px solid var(--border);
   transition: padding var(--transition-normal), justify-content var(--transition-normal);
 }
@@ -536,7 +536,7 @@ aside.sidebar.collapsed #sidebar-toggle-icon {
 
 aside.sidebar.collapsed .nav-item {
   justify-content: center;
-  padding: 12px;
+  padding: 10px;
   gap: 0;
 }
 
@@ -585,26 +585,52 @@ aside.sidebar.collapsed .user-info {
 }
 
 .sidebar-nav {
-  padding: 20px 12px;
+  padding: 40px 16px 0 16px; /* 40px top padding to push options down, 0 bottom padding so Settings touches the footer */
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex-grow: 1;
-  overflow-y: auto;
+  justify-content: space-between;
+  flex: 1 1 auto; /* Grow to fill space, push last option to touch footer */
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 12px 18px;
   border-radius: var(--radius-md);
   color: var(--subtext);
   text-decoration: none;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-fast);
   border: 1px solid transparent;
+  opacity: 0;
+  transform: translateX(-15px);
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Trigger animation when sidebar state transitions */
+aside.sidebar:not(.collapsed) .nav-item {
+  animation: sidebarItemSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+aside.sidebar.collapsed .nav-item {
+  animation: sidebarItemSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Stagger delay for sidebar options appearing one-by-one */
+.nav-item:nth-child(1) { animation-delay: 0.08s; }
+.nav-item:nth-child(2) { animation-delay: 0.14s; }
+.nav-item:nth-child(3) { animation-delay: 0.2s; }
+.nav-item:nth-child(4) { animation-delay: 0.26s; }
+.nav-item:nth-child(5) { animation-delay: 0.32s; }
+.nav-item:nth-child(6) { animation-delay: 0.38s; }
+.nav-item:nth-child(7) { animation-delay: 0.44s; }
+
+@keyframes sidebarItemSlideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .nav-item:hover {
@@ -628,12 +654,14 @@ aside.sidebar.collapsed .user-info {
   transition: var(--transition-fast);
 }
 
+
 .sidebar-footer {
-  padding: 16px;
+  padding: 16px 20px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: auto; /* Keep the profile footer pinned to the very bottom */
 }
 
 .user-tag {
@@ -6298,6 +6326,138 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 }
 
 /* ---------- Whiteboard Tile ---------- */
+.whiteboard-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.whiteboard-shell.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  border-radius: 0;
+  border: none;
+}
+
+.whiteboard-tabbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 12px 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.whiteboard-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.whiteboard-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.whiteboard-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 170px;
+  min-width: 108px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 9px 9px 0 0;
+  background: var(--surface-hover);
+  color: var(--subtext);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.whiteboard-tab.active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.whiteboard-tab span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.whiteboard-tab-close {
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.whiteboard-tab-close:hover {
+  opacity: 1;
+  color: var(--primary);
+}
+
+.whiteboard-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.whiteboard-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.whiteboard-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  color: var(--subtext);
+  font-weight: 700;
+}
+
+.whiteboard-select {
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  padding: 0 8px;
+  outline: none;
+}
+
+.whiteboard-workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px;
+  background:
+    radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.12), transparent 300px),
+    var(--bg);
+}
+
 .whiteboard-tile-body {
   flex: 1;
   display: flex;
@@ -6307,11 +6467,14 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 }
 
 .whiteboard-canvas-wrap {
-  flex: 1;
+  flex: 0 0 auto;
   position: relative;
   overflow: hidden;
   cursor: crosshair;
   background: var(--bg);
+  margin: 0 auto;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
 }
 
 .whiteboard-canvas-wrap canvas {
@@ -6321,6 +6484,52 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
+  background: transparent;
+}
+
+.whiteboard-canvas-wrap.page-transparent {
+  background: transparent;
+}
+
+.whiteboard-canvas-wrap.page-plain {
+  background: #fffdf8;
+}
+
+.whiteboard-canvas-wrap.page-ruled {
+  background:
+    linear-gradient(90deg, rgba(239, 68, 68, 0.25) 0 2px, transparent 2px) 74px 0 / 100% 100%,
+    repeating-linear-gradient(#fffdf8 0 31px, rgba(59, 130, 246, 0.28) 32px);
+}
+
+.whiteboard-canvas-wrap.page-grid {
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.16) 1px, transparent 1px),
+    #fffdf8;
+  background-size: 32px 32px;
+}
+
+.whiteboard-canvas-wrap.page-dots {
+  background:
+    radial-gradient(circle, rgba(71, 85, 105, 0.32) 1.2px, transparent 1.8px),
+    #fffdf8;
+  background-size: 24px 24px;
+}
+
+.whiteboard-canvas-wrap.page-journal {
+  background:
+    linear-gradient(90deg, rgba(244, 114, 182, 0.28) 0 2px, transparent 2px) 86px 0 / 100% 100%,
+    repeating-linear-gradient(#fffaf0 0 35px, rgba(99, 102, 241, 0.20) 36px),
+    #fffaf0;
+}
+
+.whiteboard-canvas-wrap.page-dark {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    #111827;
+  background-size: 34px 34px;
 }
 
 .whiteboard-toolbar {
