@@ -7017,3 +7017,44 @@ body.video-theme-active .whiteboard-canvas-wrap {
     right: -90px;
   }
 }
+
+/* ======================================================
+   Whiteboard Notes Wrap Page Styles
+   ====================================================== */
+.whiteboard-notes-wrap.page-transparent { background: transparent; }
+.whiteboard-notes-wrap.page-plain { background: #fffdf8; }
+.whiteboard-notes-wrap.page-ruled {
+  background:
+    linear-gradient(90deg, rgba(239, 68, 68, 0.25) 0 2px, transparent 2px) 74px 0 / 100% 100%,
+    repeating-linear-gradient(#fffdf8 0 31px, rgba(59, 130, 246, 0.28) 32px);
+}
+.whiteboard-notes-wrap.page-grid {
+  background:
+    linear-gradient(rgba(37, 99, 235, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.16) 1px, transparent 1px),
+    #fffdf8;
+  background-size: 32px 32px;
+}
+.whiteboard-notes-wrap.page-dots {
+  background:
+    radial-gradient(circle, rgba(71, 85, 105, 0.32) 1.2px, transparent 1.8px),
+    #fffdf8;
+  background-size: 24px 24px;
+}
+.whiteboard-notes-wrap.page-journal {
+  background:
+    linear-gradient(90deg, rgba(244, 114, 182, 0.28) 0 2px, transparent 2px) 86px 0 / 100% 100%,
+    repeating-linear-gradient(#fffaf0 0 35px, rgba(99, 102, 241, 0.20) 36px),
+    #fffaf0;
+}
+.whiteboard-notes-wrap.page-dark {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    #111827;
+  background-size: 34px 34px;
+}
+.whiteboard-notes-wrap.page-dark input,
+.whiteboard-notes-wrap.page-dark textarea {
+  color: #f3f4f6 !important;
+}

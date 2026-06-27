@@ -1677,6 +1677,7 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
             <button class="wb-tool-btn" id="${prefix}-image-btn" title="Paste or import image">Image</button>
             <input type="file" id="${prefix}-image-input" accept="image/*" style="display:none;" />
             <button class="wb-tool-btn" id="${prefix}-export-btn" title="Export PDF">Export PDF</button>
+            <button class="wb-tool-btn" id="${prefix}-mode-btn" title="Switch to Notes" style="background: var(--primary); color: #fff; border-color: var(--primary);">Switch to Notes</button>
           </div>
 
           <div class="whiteboard-tool-group" style="margin-left: 16px;">
@@ -1694,9 +1695,15 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
       </div>
 
       <div class="whiteboard-main">
-        <div class="whiteboard-workspace" id="${prefix}-workspace">
-          <div class="whiteboard-canvas-wrap page-transparent" id="${prefix}-canvas-wrap">
+        <div class="whiteboard-workspace" id="${prefix}-workspace" style="display: flex; flex-direction: column; position: relative;">
+          <!-- Whiteboard mode wrap -->
+          <div class="whiteboard-canvas-wrap page-transparent" id="${prefix}-canvas-wrap" style="width: 100%; height: 100%; display: block;">
             <canvas id="${prefix}-canvas"></canvas>
+          </div>
+          <!-- Notes mode wrap -->
+          <div class="whiteboard-notes-wrap" id="${prefix}-notes-wrap" style="display: none; flex-direction: column; width: 100%; height: 100%; overflow: hidden; background: var(--surface);">
+            <input class="notes-page-title-input" id="${prefix}-notes-title" placeholder="Note title..." style="padding: 14px 20px; font-size: 1rem; font-weight: 700; border-radius: 0; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text);" />
+            <textarea class="notes-textarea" id="${prefix}-notes-textarea" placeholder="Start writing here..." style="flex: 1; padding: 16px 20px; font-size: 0.88rem; line-height: 1.7; border: none; outline: none; background: transparent; color: var(--text); resize: none;"></textarea>
           </div>
         </div>
       </div>
@@ -1933,6 +1940,59 @@ function initWhiteboardTile(prefix = 'page-wb') {
       whiteboardData.activeId = whiteboardData.boards[0].id;
     }
 
+    let currentMode = 'whiteboard';
+    const NOTES_KEY = 'focus_fox_notes';
+    let notesData = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(NOTES_KEY));
+        if (saved?.pages?.length) return saved;
+      } catch { }
+      const defaultId = `${Date.now()}`;
+      return {
+        activeId: defaultId,
+        pages: [{ id: defaultId, title: 'My Notes', content: '' }]
+      };
+    })();
+
+    function saveNotesData() {
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notesData));
+    }
+
+    const notesTitleInput = byId('notes-title');
+    const notesTextarea = byId('notes-textarea');
+
+    function getActiveNote() {
+      return notesData.pages.find(p => p.id === notesData.activeId) || notesData.pages[0];
+    }
+
+    function loadActiveNote() {
+      const page = getActiveNote();
+      if (page && notesTitleInput && notesTextarea) {
+        notesTitleInput.value = page.title || '';
+        notesTextarea.value = page.content || '';
+        if (pageStyleSelect) pageStyleSelect.value = page.pageStyle || 'transparent';
+        updateNotesViewStyles();
+      }
+    }
+
+    function saveActiveNote() {
+      const page = getActiveNote();
+      if (page && notesTitleInput && notesTextarea) {
+        page.title = notesTitleInput.value;
+        page.content = notesTextarea.value;
+        saveNotesData();
+      }
+    }
+
+    if (notesTitleInput && notesTextarea) {
+      const onNoteInput = () => {
+        saveActiveNote();
+        renderModeTabs();
+      };
+      notesTitleInput.addEventListener('input', onNoteInput);
+      notesTextarea.addEventListener('input', saveActiveNote);
+    }
+
     let currentColor = '#1f2937';
     let currentTool = 'pen';
     let penSize = 4;
@@ -1979,17 +2039,54 @@ function initWhiteboardTile(prefix = 'page-wb') {
             whiteboardData.boards = whiteboardData.boards.filter(b => b.id !== closeId);
             if (closingActive) whiteboardData.activeId = whiteboardData.boards[0].id;
             saveData();
-            renderTabs();
+            renderModeTabs();
             loadBoard();
             return;
           }
           saveBoardImage();
           whiteboardData.activeId = tab.getAttribute('data-id');
           saveData();
-          renderTabs();
+          renderModeTabs();
           loadBoard();
         });
       });
+    }
+
+    function renderModeTabs() {
+      if (currentMode === 'notes') {
+        tabs.innerHTML = notesData.pages.map((page, index) => `
+          <button class="whiteboard-tab ${page.id === notesData.activeId ? 'active' : ''}" data-id="${page.id}" title="${escapeHtml(page.title)}">
+            <span>${escapeHtml(page.title || `Note ${index + 1}`)}</span>
+            ${notesData.pages.length > 1 ? `<span class="whiteboard-tab-close" data-close="${page.id}">x</span>` : ''}
+          </button>
+        `).join('');
+
+        tabs.querySelectorAll('.whiteboard-tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            const close = e.target.closest('.whiteboard-tab-close');
+            if (close) {
+              e.stopPropagation();
+              const closeId = close.getAttribute('data-close');
+              if (notesData.pages.length <= 1) return;
+              saveActiveNote();
+              const closingActive = closeId === notesData.activeId;
+              notesData.pages = notesData.pages.filter(p => p.id !== closeId);
+              if (closingActive) notesData.activeId = notesData.pages[0].id;
+              saveNotesData();
+              renderModeTabs();
+              loadActiveNote();
+              return;
+            }
+            saveActiveNote();
+            notesData.activeId = tab.getAttribute('data-id');
+            saveNotesData();
+            renderModeTabs();
+            loadActiveNote();
+          });
+        });
+      } else {
+        renderTabs();
+      }
     }
 
     function updateZoom() {
@@ -2004,13 +2101,45 @@ function initWhiteboardTile(prefix = 'page-wb') {
       updateZoom();
     }
 
+    function updateNotesViewStyles() {
+      if (!notesWrap) return;
+      const page = getActiveNote();
+      const style = page?.pageStyle || 'transparent';
+      notesWrap.className = 'whiteboard-notes-wrap';
+      notesWrap.classList.add(`page-${style}`);
+      
+      if (style === 'ruled') {
+        notesTextarea.style.lineHeight = '32px';
+        notesTextarea.style.paddingTop = '32px';
+      } else if (style === 'journal') {
+        notesTextarea.style.lineHeight = '36px';
+        notesTextarea.style.paddingTop = '36px';
+      } else {
+        notesTextarea.style.lineHeight = '1.7';
+        notesTextarea.style.paddingTop = '16px';
+      }
+
+      const fSize = page?.fontSize || 16;
+      notesTextarea.style.fontSize = `${fSize}px`;
+      if (sizeSlider) sizeSlider.value = fSize;
+    }
+
     function setPageStyle(style) {
-      wrap.classList.remove('page-transparent', 'page-plain', 'page-ruled', 'page-grid', 'page-dots', 'page-journal', 'page-dark');
-      wrap.classList.add(`page-${style}`);
-      const board = getActiveBoard();
-      if (board) {
-        board.pageStyle = style;
-        saveData();
+      if (currentMode === 'notes') {
+        const page = getActiveNote();
+        if (page) {
+          page.pageStyle = style;
+          saveNotesData();
+        }
+        updateNotesViewStyles();
+      } else {
+        wrap.classList.remove('page-transparent', 'page-plain', 'page-ruled', 'page-grid', 'page-dots', 'page-journal', 'page-dark');
+        wrap.classList.add(`page-${style}`);
+        const board = getActiveBoard();
+        if (board) {
+          board.pageStyle = style;
+          saveData();
+        }
       }
     }
 
@@ -2216,7 +2345,21 @@ function initWhiteboardTile(prefix = 'page-wb') {
       });
     });
 
-    if (sizeSlider) sizeSlider.addEventListener('input', () => { penSize = parseInt(sizeSlider.value, 10); });
+    if (sizeSlider) {
+      sizeSlider.addEventListener('input', () => {
+        const val = parseInt(sizeSlider.value, 10);
+        if (currentMode === 'notes') {
+          const page = getActiveNote();
+          if (page) {
+            page.fontSize = val;
+            saveNotesData();
+          }
+          notesTextarea.style.fontSize = `${val}px`;
+        } else {
+          penSize = val;
+        }
+      });
+    }
 
     if (pageStyleSelect) {
       pageStyleSelect.addEventListener('change', () => setPageStyle(pageStyleSelect.value));
@@ -2304,13 +2447,24 @@ function initWhiteboardTile(prefix = 'page-wb') {
 
     if (renameBtn) {
       renameBtn.addEventListener('click', () => {
-        const board = getActiveBoard();
-        if (!board) return;
-        const nextName = prompt('Board name', board.name || 'Untitled');
-        if (!nextName) return;
-        board.name = nextName.trim() || board.name;
-        saveData();
-        renderTabs();
+        if (currentMode === 'notes') {
+          const page = getActiveNote();
+          if (!page) return;
+          const nextTitle = prompt('Rename Page', page.title || 'Untitled');
+          if (!nextTitle) return;
+          page.title = nextTitle.trim() || page.title;
+          saveNotesData();
+          renderModeTabs();
+          loadActiveNote();
+        } else {
+          const board = getActiveBoard();
+          if (!board) return;
+          const nextName = prompt('Board name', board.name || 'Untitled');
+          if (!nextName) return;
+          board.name = nextName.trim() || board.name;
+          saveData();
+          renderModeTabs();
+        }
       });
     }
 
@@ -2355,21 +2509,65 @@ function initWhiteboardTile(prefix = 'page-wb') {
 
     if (exportBtn) {
       exportBtn.addEventListener('click', () => {
-        saveBoardImage();
-        const board = getActiveBoard();
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-        const exportDataUrl = buildExportDataUrl();
-        printWindow.document.write(`
-          <html><head><title>${escapeHtml(board?.name || 'Whiteboard')}</title>
-          <style>body{margin:0;background:#fff;}img{width:100%;height:auto;display:block;}</style></head>
-          <body><img src="${exportDataUrl}" /></body></html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
+        if (currentMode === 'notes') {
+          const page = getActiveNote();
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = '0';
+          document.body.appendChild(iframe);
+          
+          const doc = iframe.contentWindow.document;
+          doc.write(`
+            <html><head><title>${escapeHtml(page?.title || 'Note')}</title>
+            <style>
+              body { font-family: sans-serif; padding: 40px; color: #111; line-height: 1.6; }
+              h1 { border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+              pre { white-space: pre-wrap; font-family: inherit; font-size: 1.05rem; }
+            </style></head>
+            <body>
+              <h1>${escapeHtml(page?.title || 'Note')}</h1>
+              <pre>${escapeHtml(page?.content || '')}</pre>
+            </body></html>
+          `);
+          doc.close();
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        } else {
+          saveBoardImage();
+          const board = getActiveBoard();
+          const exportDataUrl = buildExportDataUrl();
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = '0';
+          document.body.appendChild(iframe);
+          
+          const doc = iframe.contentWindow.document;
+          doc.write(`
+            <html><head><title>${escapeHtml(board?.name || 'Whiteboard')}</title>
+            <style>
+              body{margin:0;background:#fff;display:flex;justify-content:center;}
+              img{max-width:100%;height:auto;display:block;}
+            </style></head>
+            <body><img src="${exportDataUrl}" /></body></html>
+          `);
+          doc.close();
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        }
       });
     }
 
@@ -2398,19 +2596,78 @@ function initWhiteboardTile(prefix = 'page-wb') {
       workspace.addEventListener('touchend', () => { pinchDistance = null; });
     }
 
-    if (newBoardBtn) {
-      newBoardBtn.addEventListener('click', () => {
-        saveBoardImage();
-        const board = makeBoard(`Board ${whiteboardData.boards.length + 1}`);
-        whiteboardData.boards.push(board);
-        whiteboardData.activeId = board.id;
-        saveData();
-        renderTabs();
-        loadBoard();
+    const modeBtn = byId('mode-btn');
+    const canvasWrap = byId('canvas-wrap');
+    const notesWrap = byId('notes-wrap');
+
+    if (modeBtn && canvasWrap && notesWrap) {
+      modeBtn.addEventListener('click', () => {
+        if (currentMode === 'whiteboard') {
+          saveBoardImage();
+          currentMode = 'notes';
+          modeBtn.textContent = 'Switch to Whiteboard';
+          modeBtn.title = 'Switch to Whiteboard';
+          canvasWrap.style.display = 'none';
+          notesWrap.style.display = 'flex';
+          newBoardBtn.textContent = '+ Note';
+          newBoardBtn.title = 'New note';
+          
+          shell.querySelectorAll('.whiteboard-tool-group').forEach(grp => {
+            const label = grp.querySelector('.whiteboard-group-label')?.textContent;
+            if (label === 'Tools' || label === 'Color' || label === 'View') {
+              grp.style.display = 'none';
+            }
+          });
+          if (pageStyleSelect) pageStyleSelect.parentElement.style.display = 'none';
+          if (imageBtn) imageBtn.style.display = 'none';
+
+          renderModeTabs();
+          loadActiveNote();
+        } else {
+          saveActiveNote();
+          currentMode = 'whiteboard';
+          modeBtn.textContent = 'Switch to Notes';
+          modeBtn.title = 'Switch to Notes';
+          canvasWrap.style.display = 'block';
+          notesWrap.style.display = 'none';
+          newBoardBtn.textContent = '+ Board';
+          newBoardBtn.title = 'New whiteboard';
+
+          shell.querySelectorAll('.whiteboard-tool-group').forEach(grp => {
+            grp.style.display = '';
+          });
+          if (pageStyleSelect) pageStyleSelect.parentElement.style.display = '';
+          if (imageBtn) imageBtn.style.display = '';
+
+          renderModeTabs();
+          loadBoard();
+        }
       });
     }
 
-    renderTabs();
+    if (newBoardBtn) {
+      newBoardBtn.addEventListener('click', () => {
+        if (currentMode === 'notes') {
+          saveActiveNote();
+          const newId = `${Date.now()}`;
+          notesData.pages.push({ id: newId, title: 'New Note', content: '' });
+          notesData.activeId = newId;
+          saveNotesData();
+          renderModeTabs();
+          loadActiveNote();
+        } else {
+          saveBoardImage();
+          const board = makeBoard(`Board ${whiteboardData.boards.length + 1}`);
+          whiteboardData.boards.push(board);
+          whiteboardData.activeId = board.id;
+          saveData();
+          renderModeTabs();
+          loadBoard();
+        }
+      });
+    }
+
+    renderModeTabs();
     loadBoard();
     saveData();
     return;
