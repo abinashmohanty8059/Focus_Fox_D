@@ -584,13 +584,19 @@ aside.sidebar.collapsed .user-info {
 }
 
 .sidebar-nav {
-  padding: 40px 16px 0 16px;
-  /* 40px top padding to push options down, 0 bottom padding so Settings touches the footer */
+  padding: 28px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-evenly;
   flex: 1 1 auto;
-  /* Grow to fill space, push last option to touch footer */
+  gap: 22px; /* Minimum consistent premium spacing */
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.sidebar-nav::-webkit-scrollbar {
+  display: none; /* Safari/Chrome */
 }
 
 .nav-item {
@@ -677,12 +683,13 @@ aside.sidebar.collapsed .nav-item {
 
 
 .sidebar-footer {
-  padding: 16px 20px;
+  padding: 16px 20px 24px 20px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
+  flex-shrink: 0;
   /* Keep the profile footer pinned to the very bottom */
 }
 
