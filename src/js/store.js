@@ -40,6 +40,12 @@ export const store = {
     this.completedTopics = JSON.parse(localStorage.getItem('focus_fox_completed_topics') || '[]');
     this.solvedQuestions = JSON.parse(localStorage.getItem('focus_fox_solved_questions') || '[]');
 
+    // Override keys from localStorage if saved by user in Settings
+    const localGemini = localStorage.getItem('focus_fox_user_gemini_key');
+    if (localGemini) this.env.GEMINI_API_KEY = localGemini;
+    const localDrive = localStorage.getItem('focus_fox_user_drive_key');
+    if (localDrive) this.env.DRIVE_API_KEY = localDrive;
+
     // Load saved branch & semester selection
     const savedBranch = localStorage.getItem('focus_fox_selected_branch');
     const savedSemester = localStorage.getItem('focus_fox_selected_semester');

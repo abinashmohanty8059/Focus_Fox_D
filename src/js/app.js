@@ -5444,91 +5444,69 @@ async function renderLeetcodeWebview() {
 
 // 7. Settings View
 async function renderSettingsView() {
-  const isSupabaseConfigured = store.env.SUPABASE_URL && store.env.SUPABASE_KEY;
-  const isGeminiConfigured = !!store.env.GEMINI_API_KEY;
-  const isDriveConfigured = !!store.env.DRIVE_API_KEY;
-
   viewContainer.innerHTML = `
-    <div class="settings-section fade-in">
+    <div class="settings-section fade-in" style="max-width: 800px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
       
-      <div class="settings-group">
-        <span class="settings-group-title">Display Preferences</span>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Dark Mode Theme</span>
-            <span class="setting-desc">Toggle between light and dark themes. Designed for late-night study sessions.</span>
+      <!-- Display preferences -->
+      <div class="settings-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--card-shadow);">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 20px 0; color: var(--text); display: flex; align-items: center; gap: 8px;">
+          <span>🎨</span> Display Preferences
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="setting-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+            <div class="setting-info">
+              <span class="setting-title" style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text);">Dark Mode Theme</span>
+              <span class="setting-desc" style="font-size: 0.85rem; color: var(--subtext);">Toggle between light and dark themes. Designed for late-night study sessions.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="theme-switch" ${store.theme === 'dark' ? 'checked' : ''} />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="theme-switch" ${store.theme === 'dark' ? 'checked' : ''} />
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Jellyfish Ambient Background</span>
-            <span class="setting-desc">Toggle the deep sea ambient glow video background. Best enjoyed in Dark Mode.</span>
+          <div class="setting-row" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="setting-info">
+              <span class="setting-title" style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text);">Jellyfish Ambient Background</span>
+              <span class="setting-desc" style="font-size: 0.85rem; color: var(--subtext);">Toggle the deep sea ambient glow video background. Best enjoyed in Dark Mode.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="jellyfish-switch" ${store.videoTheme === 'jellyfish' ? 'checked' : ''} />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="jellyfish-switch" ${store.videoTheme === 'jellyfish' ? 'checked' : ''} />
-            <span class="slider"></span>
-          </label>
         </div>
       </div>
 
-      <!-- Connection status -->
-      <div class="settings-group">
-        <span class="settings-group-title">API Connections & Credentials</span>
+      <!-- App Metadata and Maintenance card -->
+      <div class="settings-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--card-shadow);">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 20px 0; color: var(--text); display: flex; align-items: center; gap: 8px;">
+          <span>⚙️</span> System Settings & Coursework
+        </h3>
         
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Supabase Database API</span>
-            <span class="setting-desc">Fetches subjects, topics, importance, and question tables.</span>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+            <div>
+              <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text);">Selected Coursework</span>
+              <span id="settings-academic-info" style="font-size: 0.85rem; color: var(--subtext);">Loading selection...</span>
+            </div>
+            <button class="back-btn" style="border-radius: var(--radius-md); width:auto; padding: 0 16px; height: 36px; display:flex;" id="reset-selection-btn">
+              Change Course
+            </button>
           </div>
-          <div class="status-pill ${isSupabaseConfigured ? 'connected' : 'disconnected'}">
-            <span class="status-dot"></span>
-            <span>${isSupabaseConfigured ? 'Connected' : 'Offline'}</span>
-          </div>
-        </div>
 
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Gemini AI Engine</span>
-            <span class="setting-desc">Provides step-by-step engineering explanations and calculations.</span>
-          </div>
-          <div class="status-pill ${isGeminiConfigured ? 'connected' : 'disconnected'}">
-            <span class="status-dot"></span>
-            <span>${isGeminiConfigured ? 'Configured' : 'Missing API Key'}</span>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Google Drive Sync</span>
-            <span class="setting-desc">Renders folders of lecture notes and past papers.</span>
-          </div>
-          <div class="status-pill ${isDriveConfigured ? 'connected' : 'disconnected'}">
-            <span class="status-dot"></span>
-            <span>${isDriveConfigured ? 'Connected' : 'Missing API Key'}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text);">Clear Progress & App Cache</span>
+              <span style="font-size: 0.85rem; color: var(--subtext);">Clears saved algorithm progress, unsolved lists, and whiteboard cache.</span>
+            </div>
+            <button class="wb-tool-btn" id="clear-cache-btn" style="border: 1px solid var(--border); background: rgba(239, 68, 68, 0.15); color: #ef4444; border-radius: var(--radius-md); width:auto; padding: 0 16px; height: 36px; font-weight: 600;">
+              Reset App Data
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- App Metadata -->
-      <div class="settings-group">
-        <span class="settings-group-title">Academic Details</span>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-title">Selected Coursework</span>
-            <span class="setting-desc" id="settings-academic-info">Loading selection...</span>
-          </div>
-          <button class="back-btn" style="border-radius: var(--radius-md); width:auto; padding: 0 12px; height: 36px; display:flex;" id="reset-selection-btn">
-            Change
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-group" style="opacity: 0.6; font-size: 0.8rem; text-align: center; border-top: 1px solid var(--border); padding-top: 24px;">
-        <span>Focus Fox Desktop v1.0.0 &bull; Built with Tauri 2.x & Rust</span>
+      <div class="settings-group" style="opacity: 0.6; font-size: 0.8rem; text-align: center; padding-top: 12px; color: var(--subtext);">
+        <span>Focus Fox Desktop v1.0.0 &bull; Production Ready Release &bull; Built with Tauri 2.x & Rust</span>
       </div>
 
     </div>
@@ -5564,12 +5542,23 @@ async function renderSettingsView() {
     });
   }
 
-
+  // Reset progress and app cache
+  const clearCacheBtn = document.getElementById('clear-cache-btn');
+  if (clearCacheBtn) {
+    clearCacheBtn.addEventListener('click', () => {
+      const confirmed = confirm('Are you sure you want to reset all progress, whiteboard drawings, and application data? This action is irreversible.');
+      if (confirmed) {
+        localStorage.clear();
+        alert('All application caches cleared successfully. Restarting coursework setup.');
+        location.reload();
+      }
+    });
+  }
 
   // Load academic selection description
   const acadInfo = document.getElementById('settings-academic-info');
   if (store.selectedBranch && store.selectedSemester) {
-    acadInfo.textContent = `${store.selectedBranch.name} &bull; Semester ${store.selectedSemester}`;
+    acadInfo.innerHTML = `<strong>${escapeHtml(store.selectedBranch.name)}</strong> &bull; Semester ${store.selectedSemester}`;
   } else {
     acadInfo.innerHTML = `<em>No academic course has been selected yet.</em>`;
   }
