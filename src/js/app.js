@@ -1200,14 +1200,22 @@ async function renderSubjectsView() {
     </div>
 
     <!-- Active Subjects Section -->
-    <div class="active-subjects-section fade-in">
-      <div class="active-subjects-header">
-        <span class="active-subjects-title">Active Subjects</span>
-      </div>
+    <section class="active-subjects-section fade-in">
+      <header class="active-subjects-header-new">
+        <div class="active-subjects-header-content">
+          <div style="position: relative; display: inline-block;">
+            <h1 class="active-subjects-title-new">Active Subjects</h1>
+            <div class="active-subjects-fox-container">
+              <lottie-player src="/animation/Fox_subject.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+            </div>
+          </div>
+          <p class="active-subjects-subtitle">Continue your learning journey</p>
+        </div>
+      </header>
       <div class="subjects-grid" id="active-subjects-grid">
         ${cardsHtml}
       </div>
-    </div>
+    </section>
   `;
 
   // Attach card and button click handlers to navigate to subject dashboard
@@ -1792,331 +1800,331 @@ function initNotesTile() {
 // =====================================================================
 function initWhiteboardTile() {
   {
-  const WB_KEY = 'focus_fox_whiteboards_v2';
-  const LEGACY_WB_KEY = 'focus_fox_whiteboards';
-  const shell = document.getElementById('whiteboard-shell');
-  const tabs = document.getElementById('wb-tabs');
-  const canvas = document.getElementById('wb-canvas');
-  const wrap = document.getElementById('wb-canvas-wrap');
-  const workspace = document.getElementById('wb-workspace');
-  const newBoardBtn = document.getElementById('wb-new-board-btn');
-  const undoBtn = document.getElementById('wb-undo-btn');
-  const clearBtn = document.getElementById('wb-clear-btn');
-  const extendBtn = document.getElementById('wb-extend-btn');
-  const fullscreenBtn = document.getElementById('wb-fullscreen-btn');
-  const sizeSlider = document.getElementById('wb-size');
-  const pageStyleSelect = document.getElementById('wb-page-style');
+    const WB_KEY = 'focus_fox_whiteboards_v2';
+    const LEGACY_WB_KEY = 'focus_fox_whiteboards';
+    const shell = document.getElementById('whiteboard-shell');
+    const tabs = document.getElementById('wb-tabs');
+    const canvas = document.getElementById('wb-canvas');
+    const wrap = document.getElementById('wb-canvas-wrap');
+    const workspace = document.getElementById('wb-workspace');
+    const newBoardBtn = document.getElementById('wb-new-board-btn');
+    const undoBtn = document.getElementById('wb-undo-btn');
+    const clearBtn = document.getElementById('wb-clear-btn');
+    const extendBtn = document.getElementById('wb-extend-btn');
+    const fullscreenBtn = document.getElementById('wb-fullscreen-btn');
+    const sizeSlider = document.getElementById('wb-size');
+    const pageStyleSelect = document.getElementById('wb-page-style');
 
-  if (!canvas || !wrap || !tabs) return;
+    if (!canvas || !wrap || !tabs) return;
 
-  const PAGE_WIDTH = 1100;
-  const DEFAULT_HEIGHT = 1400;
-  const HEIGHT_STEP = 900;
-  const ctx = canvas.getContext('2d');
+    const PAGE_WIDTH = 1100;
+    const DEFAULT_HEIGHT = 1400;
+    const HEIGHT_STEP = 900;
+    const ctx = canvas.getContext('2d');
 
-  function makeBoard(name, dataUrl = null) {
-    return {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      name,
-      dataUrl,
-      pageStyle: 'transparent',
-      width: PAGE_WIDTH,
-      height: DEFAULT_HEIGHT
-    };
-  }
+    function makeBoard(name, dataUrl = null) {
+      return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name,
+        dataUrl,
+        pageStyle: 'transparent',
+        width: PAGE_WIDTH,
+        height: DEFAULT_HEIGHT
+      };
+    }
 
-  let whiteboardData = (() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(WB_KEY));
-      if (saved?.boards?.length) return saved;
-    } catch { }
+    let whiteboardData = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(WB_KEY));
+        if (saved?.boards?.length) return saved;
+      } catch { }
 
-    try {
-      const legacy = JSON.parse(localStorage.getItem(LEGACY_WB_KEY));
-      if (Array.isArray(legacy) && legacy.length) {
-        return {
-          activeId: null,
-          boards: legacy.map((b, i) => makeBoard(b.name || `Board ${i + 1}`, b.dataUrl || null))
-        };
-      }
-    } catch { }
+      try {
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_WB_KEY));
+        if (Array.isArray(legacy) && legacy.length) {
+          return {
+            activeId: null,
+            boards: legacy.map((b, i) => makeBoard(b.name || `Board ${i + 1}`, b.dataUrl || null))
+          };
+        }
+      } catch { }
 
-    return { activeId: null, boards: [makeBoard('Board 1')] };
-  })();
+      return { activeId: null, boards: [makeBoard('Board 1')] };
+    })();
 
-  if (!whiteboardData.activeId || !whiteboardData.boards.some(b => b.id === whiteboardData.activeId)) {
-    whiteboardData.activeId = whiteboardData.boards[0].id;
-  }
+    if (!whiteboardData.activeId || !whiteboardData.boards.some(b => b.id === whiteboardData.activeId)) {
+      whiteboardData.activeId = whiteboardData.boards[0].id;
+    }
 
-  let currentColor = '#1f2937';
-  let currentTool = 'pen';
-  let penSize = 4;
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
-  let undoStack = [];
+    let currentColor = '#1f2937';
+    let currentTool = 'pen';
+    let penSize = 4;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let undoStack = [];
 
-  function getActiveBoard() {
-    return whiteboardData.boards.find(b => b.id === whiteboardData.activeId) || whiteboardData.boards[0];
-  }
+    function getActiveBoard() {
+      return whiteboardData.boards.find(b => b.id === whiteboardData.activeId) || whiteboardData.boards[0];
+    }
 
-  function saveData() {
-    localStorage.setItem(WB_KEY, JSON.stringify(whiteboardData));
-  }
+    function saveData() {
+      localStorage.setItem(WB_KEY, JSON.stringify(whiteboardData));
+    }
 
-  function saveBoardImage() {
-    const board = getActiveBoard();
-    if (!board) return;
-    board.dataUrl = canvas.toDataURL();
-    board.width = canvas.width;
-    board.height = canvas.height;
-    saveData();
-  }
+    function saveBoardImage() {
+      const board = getActiveBoard();
+      if (!board) return;
+      board.dataUrl = canvas.toDataURL();
+      board.width = canvas.width;
+      board.height = canvas.height;
+      saveData();
+    }
 
-  function renderTabs() {
-    tabs.innerHTML = whiteboardData.boards.map((board, index) => `
+    function renderTabs() {
+      tabs.innerHTML = whiteboardData.boards.map((board, index) => `
       <button class="whiteboard-tab ${board.id === whiteboardData.activeId ? 'active' : ''}" data-id="${board.id}" title="${escapeHtml(board.name)}">
         <span>${escapeHtml(board.name || `Board ${index + 1}`)}</span>
         ${whiteboardData.boards.length > 1 ? `<span class="whiteboard-tab-close" data-close="${board.id}">x</span>` : ''}
       </button>
     `).join('');
 
-    tabs.querySelectorAll('.whiteboard-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        const close = e.target.closest('.whiteboard-tab-close');
-        if (close) {
-          e.stopPropagation();
-          const closeId = close.getAttribute('data-close');
-          if (whiteboardData.boards.length <= 1) return;
+      tabs.querySelectorAll('.whiteboard-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          const close = e.target.closest('.whiteboard-tab-close');
+          if (close) {
+            e.stopPropagation();
+            const closeId = close.getAttribute('data-close');
+            if (whiteboardData.boards.length <= 1) return;
+            saveBoardImage();
+            const closingActive = closeId === whiteboardData.activeId;
+            whiteboardData.boards = whiteboardData.boards.filter(b => b.id !== closeId);
+            if (closingActive) whiteboardData.activeId = whiteboardData.boards[0].id;
+            saveData();
+            renderTabs();
+            loadBoard();
+            return;
+          }
           saveBoardImage();
-          const closingActive = closeId === whiteboardData.activeId;
-          whiteboardData.boards = whiteboardData.boards.filter(b => b.id !== closeId);
-          if (closingActive) whiteboardData.activeId = whiteboardData.boards[0].id;
+          whiteboardData.activeId = tab.getAttribute('data-id');
           saveData();
           renderTabs();
           loadBoard();
-          return;
-        }
-        saveBoardImage();
-        whiteboardData.activeId = tab.getAttribute('data-id');
-        saveData();
-        renderTabs();
-        loadBoard();
+        });
       });
-    });
-  }
-
-  function setPageStyle(style) {
-    wrap.classList.remove('page-transparent', 'page-plain', 'page-ruled', 'page-grid', 'page-dots', 'page-journal', 'page-dark');
-    wrap.classList.add(`page-${style}`);
-    const board = getActiveBoard();
-    if (board) {
-      board.pageStyle = style;
-      saveData();
-    }
-  }
-
-  function setCanvasSize(width, height, preserve = true) {
-    const snapshot = preserve && canvas.width && canvas.height ? canvas.toDataURL() : null;
-    canvas.width = width;
-    canvas.height = height;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    wrap.style.width = `${width}px`;
-    wrap.style.height = `${height}px`;
-
-    if (!snapshot) return;
-    const img = new Image();
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      saveBoardImage();
-    };
-    img.src = snapshot;
-  }
-
-  function loadBoard() {
-    const board = getActiveBoard();
-    if (!board) return;
-    undoStack = [];
-    setCanvasSize(board.width || PAGE_WIDTH, board.height || DEFAULT_HEIGHT, false);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setPageStyle(board.pageStyle || 'transparent');
-    if (pageStyleSelect) pageStyleSelect.value = board.pageStyle || 'transparent';
-
-    if (board.dataUrl) {
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0);
-      img.src = board.dataUrl;
     }
 
-    if (workspace) workspace.scrollTop = 0;
-  }
-
-  function pushUndo() {
-    undoStack.push(canvas.toDataURL());
-    if (undoStack.length > 40) undoStack.shift();
-  }
-
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const pointer = e.touches ? e.touches[0] : e;
-    return {
-      x: (pointer.clientX - rect.left) * (canvas.width / rect.width),
-      y: (pointer.clientY - rect.top) * (canvas.height / rect.height)
-    };
-  }
-
-  function applyToolStyle() {
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = currentColor;
-    ctx.lineWidth = penSize;
-
-    if (currentTool === 'marker') {
-      ctx.lineWidth = penSize * 1.8;
-    } else if (currentTool === 'highlighter') {
-      ctx.globalAlpha = 0.32;
-      ctx.lineWidth = penSize * 4;
-    } else if (currentTool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = penSize * 5;
-    }
-  }
-
-  function startDraw(e) {
-    e.preventDefault();
-    pushUndo();
-    isDrawing = true;
-    const pos = getPos(e);
-    lastX = pos.x;
-    lastY = pos.y;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-  }
-
-  function draw(e) {
-    if (!isDrawing) return;
-    e.preventDefault();
-    const pos = getPos(e);
-    applyToolStyle();
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    lastX = pos.x;
-    lastY = pos.y;
-  }
-
-  function endDraw() {
-    if (!isDrawing) return;
-    isDrawing = false;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    saveBoardImage();
-  }
-
-  canvas.addEventListener('mousedown', startDraw);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
-  canvas.addEventListener('touchstart', startDraw, { passive: false });
-  canvas.addEventListener('touchmove', draw, { passive: false });
-  canvas.addEventListener('touchend', endDraw);
-
-  document.querySelectorAll('[data-tool]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentTool = btn.getAttribute('data-tool');
-      document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-
-  document.querySelectorAll('.wb-color-swatch').forEach(swatch => {
-    swatch.addEventListener('click', () => {
-      currentColor = swatch.getAttribute('data-color');
-      document.querySelectorAll('.wb-color-swatch').forEach(s => s.classList.remove('active'));
-      swatch.classList.add('active');
-      if (currentTool === 'eraser') {
-        currentTool = 'pen';
-        document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.getAttribute('data-tool') === 'pen'));
-      }
-    });
-  });
-
-  if (sizeSlider) sizeSlider.addEventListener('input', () => { penSize = parseInt(sizeSlider.value, 10); });
-
-  if (pageStyleSelect) {
-    pageStyleSelect.addEventListener('change', () => setPageStyle(pageStyleSelect.value));
-  }
-
-  if (extendBtn) {
-    extendBtn.addEventListener('click', () => {
-      pushUndo();
+    function setPageStyle(style) {
+      wrap.classList.remove('page-transparent', 'page-plain', 'page-ruled', 'page-grid', 'page-dots', 'page-journal', 'page-dark');
+      wrap.classList.add(`page-${style}`);
       const board = getActiveBoard();
-      board.height = (board.height || canvas.height || DEFAULT_HEIGHT) + HEIGHT_STEP;
-      setCanvasSize(board.width || PAGE_WIDTH, board.height, true);
-      saveData();
-    });
-  }
+      if (board) {
+        board.pageStyle = style;
+        saveData();
+      }
+    }
 
-  if (undoBtn) {
-    undoBtn.addEventListener('click', () => {
-      if (undoStack.length === 0) return;
-      const prev = undoStack.pop();
+    function setCanvasSize(width, height, preserve = true) {
+      const snapshot = preserve && canvas.width && canvas.height ? canvas.toDataURL() : null;
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      wrap.style.width = `${width}px`;
+      wrap.style.height = `${height}px`;
+
+      if (!snapshot) return;
       const img = new Image();
       img.onload = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
         saveBoardImage();
       };
-      img.src = prev;
-    });
-  }
+      img.src = snapshot;
+    }
 
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      pushUndo();
+    function loadBoard() {
+      const board = getActiveBoard();
+      if (!board) return;
+      undoStack = [];
+      setCanvasSize(board.width || PAGE_WIDTH, board.height || DEFAULT_HEIGHT, false);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      saveBoardImage();
-    });
-  }
+      setPageStyle(board.pageStyle || 'transparent');
+      if (pageStyleSelect) pageStyleSelect.value = board.pageStyle || 'transparent';
 
-  if (fullscreenBtn && shell) {
-    fullscreenBtn.addEventListener('click', async () => {
-      shell.classList.toggle('is-fullscreen');
-      try {
-        if (shell.classList.contains('is-fullscreen') && shell.requestFullscreen) {
-          await shell.requestFullscreen();
-        } else if (document.fullscreenElement) {
-          await document.exitFullscreen();
+      if (board.dataUrl) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = board.dataUrl;
+      }
+
+      if (workspace) workspace.scrollTop = 0;
+    }
+
+    function pushUndo() {
+      undoStack.push(canvas.toDataURL());
+      if (undoStack.length > 40) undoStack.shift();
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const pointer = e.touches ? e.touches[0] : e;
+      return {
+        x: (pointer.clientX - rect.left) * (canvas.width / rect.width),
+        y: (pointer.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function applyToolStyle() {
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = penSize;
+
+      if (currentTool === 'marker') {
+        ctx.lineWidth = penSize * 1.8;
+      } else if (currentTool === 'highlighter') {
+        ctx.globalAlpha = 0.32;
+        ctx.lineWidth = penSize * 4;
+      } else if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = penSize * 5;
+      }
+    }
+
+    function startDraw(e) {
+      e.preventDefault();
+      pushUndo();
+      isDrawing = true;
+      const pos = getPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      applyToolStyle();
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function endDraw() {
+      if (!isDrawing) return;
+      isDrawing = false;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      saveBoardImage();
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+
+    document.querySelectorAll('[data-tool]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentTool = btn.getAttribute('data-tool');
+        document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.wb-color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        currentColor = swatch.getAttribute('data-color');
+        document.querySelectorAll('.wb-color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        if (currentTool === 'eraser') {
+          currentTool = 'pen';
+          document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.getAttribute('data-tool') === 'pen'));
         }
-      } catch { }
+      });
     });
 
-    document.addEventListener('fullscreenchange', () => {
-      shell.classList.toggle('is-fullscreen', document.fullscreenElement === shell);
-    });
-  }
+    if (sizeSlider) sizeSlider.addEventListener('input', () => { penSize = parseInt(sizeSlider.value, 10); });
 
-  if (newBoardBtn) {
-    newBoardBtn.addEventListener('click', () => {
-      saveBoardImage();
-      const board = makeBoard(`Board ${whiteboardData.boards.length + 1}`);
-      whiteboardData.boards.push(board);
-      whiteboardData.activeId = board.id;
-      saveData();
-      renderTabs();
-      loadBoard();
-    });
-  }
+    if (pageStyleSelect) {
+      pageStyleSelect.addEventListener('change', () => setPageStyle(pageStyleSelect.value));
+    }
 
-  renderTabs();
-  loadBoard();
-  saveData();
-  return;
+    if (extendBtn) {
+      extendBtn.addEventListener('click', () => {
+        pushUndo();
+        const board = getActiveBoard();
+        board.height = (board.height || canvas.height || DEFAULT_HEIGHT) + HEIGHT_STEP;
+        setCanvasSize(board.width || PAGE_WIDTH, board.height, true);
+        saveData();
+      });
+    }
+
+    if (undoBtn) {
+      undoBtn.addEventListener('click', () => {
+        if (undoStack.length === 0) return;
+        const prev = undoStack.pop();
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          saveBoardImage();
+        };
+        img.src = prev;
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        pushUndo();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        saveBoardImage();
+      });
+    }
+
+    if (fullscreenBtn && shell) {
+      fullscreenBtn.addEventListener('click', async () => {
+        shell.classList.toggle('is-fullscreen');
+        try {
+          if (shell.classList.contains('is-fullscreen') && shell.requestFullscreen) {
+            await shell.requestFullscreen();
+          } else if (document.fullscreenElement) {
+            await document.exitFullscreen();
+          }
+        } catch { }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        shell.classList.toggle('is-fullscreen', document.fullscreenElement === shell);
+      });
+    }
+
+    if (newBoardBtn) {
+      newBoardBtn.addEventListener('click', () => {
+        saveBoardImage();
+        const board = makeBoard(`Board ${whiteboardData.boards.length + 1}`);
+        whiteboardData.boards.push(board);
+        whiteboardData.activeId = board.id;
+        saveData();
+        renderTabs();
+        loadBoard();
+      });
+    }
+
+    renderTabs();
+    loadBoard();
+    saveData();
+    return;
   }
 
   const WB_KEY = 'focus_fox_whiteboards';

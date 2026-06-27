@@ -585,11 +585,13 @@ aside.sidebar.collapsed .user-info {
 }
 
 .sidebar-nav {
-  padding: 40px 16px 0 16px; /* 40px top padding to push options down, 0 bottom padding so Settings touches the footer */
+  padding: 40px 16px 0 16px;
+  /* 40px top padding to push options down, 0 bottom padding so Settings touches the footer */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  flex: 1 1 auto; /* Grow to fill space, push last option to touch footer */
+  flex: 1 1 auto;
+  /* Grow to fill space, push last option to touch footer */
 }
 
 .nav-item {
@@ -618,13 +620,33 @@ aside.sidebar.collapsed .nav-item {
 }
 
 /* Stagger delay for sidebar options appearing one-by-one */
-.nav-item:nth-child(1) { animation-delay: 0.08s; }
-.nav-item:nth-child(2) { animation-delay: 0.14s; }
-.nav-item:nth-child(3) { animation-delay: 0.2s; }
-.nav-item:nth-child(4) { animation-delay: 0.26s; }
-.nav-item:nth-child(5) { animation-delay: 0.32s; }
-.nav-item:nth-child(6) { animation-delay: 0.38s; }
-.nav-item:nth-child(7) { animation-delay: 0.44s; }
+.nav-item:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.nav-item:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.nav-item:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.nav-item:nth-child(4) {
+  animation-delay: 0.26s;
+}
+
+.nav-item:nth-child(5) {
+  animation-delay: 0.32s;
+}
+
+.nav-item:nth-child(6) {
+  animation-delay: 0.38s;
+}
+
+.nav-item:nth-child(7) {
+  animation-delay: 0.44s;
+}
 
 @keyframes sidebarItemSlideIn {
   to {
@@ -661,7 +683,8 @@ aside.sidebar.collapsed .nav-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto; /* Keep the profile footer pinned to the very bottom */
+  margin-top: auto;
+  /* Keep the profile footer pinned to the very bottom */
 }
 
 .user-tag {
@@ -2377,6 +2400,7 @@ aside.sidebar.collapsed .mini-stopwatch {
 aside.sidebar.collapsed .mini-stopwatch .stopwatch-controls {
   display: none !important;
 }
+
 /* Collapsed Sidebar Music Player styles (play/pause only) */
 aside.sidebar.collapsed .mini-music-player {
   margin: 4px 4px 8px 4px;
@@ -6233,8 +6257,14 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   background: var(--bg);
 }
 
-.notes-sidebar::-webkit-scrollbar { width: 4px; }
-.notes-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.notes-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notes-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .notes-page-item {
   padding: 7px 10px;
@@ -6274,7 +6304,9 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   flex-shrink: 0;
 }
 
-.notes-page-item .del-page-btn:hover { opacity: 1; }
+.notes-page-item .del-page-btn:hover {
+  opacity: 1;
+}
 
 .notes-editor-area {
   flex: 1;
@@ -6310,8 +6342,14 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   overflow-y: auto;
 }
 
-.notes-textarea::-webkit-scrollbar { width: 4px; }
-.notes-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.notes-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notes-textarea::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
 
 .notes-empty-hint {
   display: flex;
@@ -6553,7 +6591,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   flex-shrink: 0;
 }
 
-.wb-color-swatch:hover, .wb-color-swatch.active {
+.wb-color-swatch:hover,
+.wb-color-swatch.active {
   transform: scale(1.3);
   border-color: var(--text);
 }
@@ -6570,7 +6609,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   font-family: var(--font-sans);
 }
 
-.wb-tool-btn:hover, .wb-tool-btn.active {
+.wb-tool-btn:hover,
+.wb-tool-btn.active {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary);
@@ -6607,7 +6647,9 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   line-height: 1;
 }
 
-.wb-board-nav button:hover { color: var(--text); }
+.wb-board-nav button:hover {
+  color: var(--text);
+}
 
 /* Video theme overlay fixes */
 /* Video theme overlay fixes */
@@ -6616,7 +6658,7 @@ body.video-theme-active .notes-sidebar,
 body.video-theme-active .notes-page-title-input,
 body.video-theme-active .whiteboard-toolbar,
 body.video-theme-active .whiteboard-canvas-wrap {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
 }
 
@@ -6636,28 +6678,35 @@ body.video-theme-active .whiteboard-canvas-wrap {
   padding: 0;
   outline: none;
 }
+
 .player-btn:hover {
   background-color: var(--surface-hover);
   color: var(--primary);
   transform: scale(1.08);
 }
+
 .player-btn:active {
   transform: scale(0.92);
 }
+
 .player-btn svg {
   fill: currentColor;
 }
+
 .player-btn.play-btn:hover {
   background: var(--primary);
   filter: brightness(1.15);
   transform: scale(1.08);
 }
+
 .player-btn.play-btn:active {
   transform: scale(0.92);
 }
+
 #global-music-player-drawer {
   font-family: var(--font-sans);
 }
+
 .music-fox-perch {
   position: absolute;
   left: 50%;
@@ -6671,36 +6720,110 @@ body.video-theme-active .whiteboard-canvas-wrap {
   transition: opacity 0.28s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s ease;
   z-index: 0;
 }
+
 .music-fox-perch lottie-player {
   width: 100%;
   height: 100%;
   display: block;
 }
+
 #global-music-player-drawer.open .music-fox-perch {
   transform: translate(-50%, 0) scale(1);
   opacity: 1;
   visibility: visible;
 }
+
 #global-music-player-tab:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
+
 #global-music-player-tab:active {
   transform: translateY(0);
 }
+
 #scratch-music-player-container .player-btn {
   width: 28px;
   height: 28px;
 }
+
 #scratch-music-player-container .player-btn.play-btn {
   width: 34px;
   height: 34px;
 }
+
 #global-music-player-drawer .player-btn {
   width: 30px;
   height: 30px;
 }
+
 #global-music-player-drawer .player-btn.play-btn {
   width: 38px;
   height: 38px;
+}
+
+/* ======================================================
+   Redesigned Active Subjects Header Section
+   ====================================================== */
+.active-subjects-header-new {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+  padding-bottom: 16px;
+  margin-top: 16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  min-height: 90px;
+}
+
+.active-subjects-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.active-subjects-title-new {
+  font-size: 2.2rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  color: var(--text);
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.active-subjects-subtitle {
+  font-size: 0.95rem;
+  color: var(--subtext);
+  margin: 0;
+  font-weight: 500;
+}
+
+.active-subjects-fox-container {
+  position: absolute;
+  top: -55px;
+  right: -150px;
+  width: 165px;
+  height: 165px;
+  pointer-events: none;
+  z-index: 10;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive adjustment for header elements */
+@media (max-width: 768px) {
+  .active-subjects-title-new {
+    font-size: 1.8rem;
+  }
+
+  .active-subjects-fox-container {
+    width: 130px;
+    height: 130px;
+    top: -45px;
+    right: -90px;
+  }
 }
