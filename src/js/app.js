@@ -1329,19 +1329,27 @@ function initGlobalMusicPlayerDrawer() {
 
   if (!drawer || !tab) return;
 
+  function syncDrawerState() {
+    if (isDrawerOpen) {
+      drawer.style.bottom = '0px';
+      drawer.classList.add('open');
+      if (arrow) arrow.textContent = '▼';
+    } else {
+      drawer.style.bottom = '-80px';
+      drawer.classList.remove('open');
+      if (arrow) arrow.textContent = '▲';
+    }
+  }
+
+  syncDrawerState();
+
   // Single listener attached globally once
   if (tab.getAttribute('data-bound') === 'true') return;
   tab.setAttribute('data-bound', 'true');
 
   tab.addEventListener('click', () => {
     isDrawerOpen = !isDrawerOpen;
-    if (isDrawerOpen) {
-      drawer.style.bottom = '0px';
-      if (arrow) arrow.textContent = '▼';
-    } else {
-      drawer.style.bottom = '-80px';
-      if (arrow) arrow.textContent = '▲';
-    }
+    syncDrawerState();
   });
 }
 
