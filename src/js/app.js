@@ -101,6 +101,9 @@ async function init() {
   // Initialize sidebar stopwatch
   initStopwatch();
 
+  // Initialize global pull-out whiteboard drawer
+  initGlobalWhiteboardDrawer();
+
   // Load initial view based on coursework selection
   if (store.selectedBranch && store.selectedSemester) {
     navDashboard.style.display = 'flex';
@@ -239,6 +242,7 @@ function bindEvents() {
     const { view, data } = e.detail;
     updateSidebarActiveState(view);
     updateHeader(view, data);
+    syncGlobalWhiteboardDrawer(view);
     renderView(view, data);
   });
 
@@ -1328,6 +1332,7 @@ let scratchPlaylist = [
 let scratchCurrentIndex = 0;
 let scratchIsPlaying = false;
 let isDrawerOpen = false;
+let whiteboardDrawerSide = 'left';
 
 // Global persistent sliding drawer toggle helper
 function initGlobalMusicPlayerDrawer() {
@@ -1359,6 +1364,23 @@ function initGlobalMusicPlayerDrawer() {
     isDrawerOpen = !isDrawerOpen;
     syncDrawerState();
   });
+}
+
+function syncGlobalWhiteboardDrawer(view) {
+  const drawer = document.getElementById('global-whiteboard-drawer');
+  if (!drawer) return;
+
+  const isAlgoView = view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution';
+  if (!isAlgoView) {
+    drawer.classList.remove('open', 'visible', 'side-left', 'side-right');
+    return;
+  }
+
+  whiteboardDrawerSide = 'right';
+  drawer.classList.add('visible');
+  drawer.classList.remove('side-left');
+  drawer.classList.add('side-right');
+  drawer.classList.toggle('open', drawer.dataset.open === 'true');
 }
 
 async function initScratchMusicPlayer() {
@@ -1581,63 +1603,92 @@ function renderNotesView() {
 // =====================================================================
 // Full-page Whiteboard View (sidebar nav)
 // =====================================================================
-function renderWhiteboardView() {
-  viewContainer.innerHTML = `
-    <div class="whiteboard-shell fade-in" id="whiteboard-shell">
+function getWhiteboardMarkup(prefix, extraClass = '') {
+  return `
+    <div class="whiteboard-shell ${extraClass}" id="${prefix}-shell">
       <div class="whiteboard-tabbar">
-        <div class="whiteboard-tabs" id="wb-tabs"></div>
-        <button class="tool-tile-btn" id="wb-new-board-btn" title="New whiteboard">+ Board</button>
+        <div class="whiteboard-tabs" id="${prefix}-tabs"></div>
+        <button class="tool-tile-btn" id="${prefix}-new-board-btn" title="New whiteboard">+ Board</button>
       </div>
 
-      <div class="whiteboard-topbar">
-        <div class="whiteboard-control-group">
-          <button class="wb-tool-btn active" data-tool="pen" title="Pen">Pen</button>
-          <button class="wb-tool-btn" data-tool="marker" title="Marker">Marker</button>
-          <button class="wb-tool-btn" data-tool="highlighter" title="Highlighter">Highlighter</button>
-          <button class="wb-tool-btn" data-tool="eraser" title="Eraser">Eraser</button>
-        </div>
-        <div class="whiteboard-control-group">
-          <div class="wb-color-swatch active" style="background:#1f2937;" data-color="#1f2937" title="Ink"></div>
-          <div class="wb-color-swatch" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></div>
-          <div class="wb-color-swatch" style="background:#2563eb;" data-color="#2563eb" title="Blue"></div>
-          <div class="wb-color-swatch" style="background:#059669;" data-color="#059669" title="Green"></div>
-          <div class="wb-color-swatch" style="background:#ea580c;" data-color="#ea580c" title="Orange"></div>
-          <div class="wb-color-swatch" style="background:#dc2626;" data-color="#dc2626" title="Red"></div>
-          <div class="wb-color-swatch" style="background:#facc15;" data-color="#facc15" title="Yellow"></div>
-          <div class="wb-color-swatch" style="background:#f8fafc;" data-color="#f8fafc" title="White"></div>
-        </div>
-        <label class="whiteboard-field">
-          <span>Size</span>
-          <input type="range" class="wb-size-slider" id="wb-size" min="1" max="44" value="4" title="Stroke size" />
-        </label>
-        <label class="whiteboard-field">
-          <span>Page</span>
-          <select id="wb-page-style" class="whiteboard-select" title="Page style">
-            <option value="transparent">Transparent</option>
-            <option value="plain">Plain</option>
-            <option value="ruled">Ruled</option>
-            <option value="grid">Grid</option>
-            <option value="dots">Dots</option>
-            <option value="journal">Journal</option>
-            <option value="dark">Dark</option>
-          </select>
-        </label>
-        <div class="whiteboard-control-group wb-actions">
-          <button class="wb-tool-btn" id="wb-extend-btn" title="Add more vertical space">Longer page</button>
-          <button class="wb-tool-btn" id="wb-undo-btn" title="Undo">Undo</button>
-          <button class="wb-tool-btn" id="wb-clear-btn" title="Clear board">Clear</button>
-          <button class="wb-tool-btn" id="wb-fullscreen-btn" title="Fullscreen">Fullscreen</button>
-        </div>
-      </div>
+      <div class="whiteboard-main">
+        <aside class="whiteboard-side-tools">
+          <div class="whiteboard-side-section">
+            <span class="whiteboard-side-label">Tools</span>
+            <button class="wb-tool-btn active" data-tool="pen" title="Pen">Pen</button>
+            <button class="wb-tool-btn" data-tool="marker" title="Marker">Marker</button>
+            <button class="wb-tool-btn" data-tool="highlighter" title="Highlighter">Highlighter</button>
+            <button class="wb-tool-btn" data-tool="eraser" title="Eraser">Eraser</button>
+          </div>
 
-      <div class="whiteboard-workspace" id="wb-workspace">
-        <div class="whiteboard-canvas-wrap page-transparent" id="wb-canvas-wrap">
-          <canvas id="wb-canvas"></canvas>
+          <div class="whiteboard-side-section">
+            <span class="whiteboard-side-label">Color</span>
+            <div class="whiteboard-color-grid">
+              <div class="wb-color-swatch active" style="background:#1f2937;" data-color="#1f2937" title="Ink"></div>
+              <div class="wb-color-swatch" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></div>
+              <div class="wb-color-swatch" style="background:#2563eb;" data-color="#2563eb" title="Blue"></div>
+              <div class="wb-color-swatch" style="background:#059669;" data-color="#059669" title="Green"></div>
+              <div class="wb-color-swatch" style="background:#ea580c;" data-color="#ea580c" title="Orange"></div>
+              <div class="wb-color-swatch" style="background:#dc2626;" data-color="#dc2626" title="Red"></div>
+              <div class="wb-color-swatch" style="background:#facc15;" data-color="#facc15" title="Yellow"></div>
+              <div class="wb-color-swatch" style="background:#f8fafc;" data-color="#f8fafc" title="White"></div>
+            </div>
+          </div>
+
+          <div class="whiteboard-side-section">
+            <label class="whiteboard-field stacked">
+              <span>Size</span>
+              <input type="range" class="wb-size-slider" id="${prefix}-size" min="1" max="44" value="4" title="Stroke size" />
+            </label>
+            <label class="whiteboard-field stacked">
+              <span>Page</span>
+              <select id="${prefix}-page-style" class="whiteboard-select" title="Page style">
+                <option value="transparent">Transparent</option>
+                <option value="plain">Plain</option>
+                <option value="ruled">Ruled</option>
+                <option value="grid">Grid</option>
+                <option value="dots">Dots</option>
+                <option value="journal">Journal</option>
+                <option value="dark">Dark</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="whiteboard-side-section">
+            <span class="whiteboard-side-label">Files</span>
+            <button class="wb-tool-btn" id="${prefix}-rename-btn" title="Rename board">Rename</button>
+            <button class="wb-tool-btn" id="${prefix}-image-btn" title="Paste or import image">Image</button>
+            <input type="file" id="${prefix}-image-input" accept="image/*" style="display:none;" />
+            <button class="wb-tool-btn" id="${prefix}-export-btn" title="Export PDF">Export PDF</button>
+          </div>
+
+          <div class="whiteboard-side-section">
+            <span class="whiteboard-side-label">View</span>
+            <div class="whiteboard-zoom-row">
+              <button class="wb-tool-btn" id="${prefix}-zoom-out-btn" title="Zoom out">-</button>
+              <span id="${prefix}-zoom-label">100%</span>
+              <button class="wb-tool-btn" id="${prefix}-zoom-in-btn" title="Zoom in">+</button>
+            </div>
+            <button class="wb-tool-btn" id="${prefix}-extend-btn" title="Add more vertical space">Longer page</button>
+            <button class="wb-tool-btn" id="${prefix}-undo-btn" title="Undo">Undo</button>
+            <button class="wb-tool-btn" id="${prefix}-clear-btn" title="Clear board">Clear</button>
+            <button class="wb-tool-btn" id="${prefix}-fullscreen-btn" title="Fullscreen">Fullscreen</button>
+          </div>
+        </aside>
+
+        <div class="whiteboard-workspace" id="${prefix}-workspace">
+          <div class="whiteboard-canvas-wrap page-transparent" id="${prefix}-canvas-wrap">
+            <canvas id="${prefix}-canvas"></canvas>
+          </div>
         </div>
       </div>
     </div>
   `;
-  initWhiteboardTile();
+}
+
+function renderWhiteboardView() {
+  viewContainer.innerHTML = getWhiteboardMarkup('page-wb', 'fade-in');
+  initWhiteboardTile('page-wb');
   return;
 
   viewContainer.innerHTML = `
@@ -1798,22 +1849,30 @@ function initNotesTile() {
 // =====================================================================
 // Whiteboard Tile — multi-board canvas drawing with undo + local save
 // =====================================================================
-function initWhiteboardTile() {
+function initWhiteboardTile(prefix = 'page-wb') {
   {
+    const byId = (name) => document.getElementById(`${prefix}-${name}`);
     const WB_KEY = 'focus_fox_whiteboards_v2';
     const LEGACY_WB_KEY = 'focus_fox_whiteboards';
-    const shell = document.getElementById('whiteboard-shell');
-    const tabs = document.getElementById('wb-tabs');
-    const canvas = document.getElementById('wb-canvas');
-    const wrap = document.getElementById('wb-canvas-wrap');
-    const workspace = document.getElementById('wb-workspace');
-    const newBoardBtn = document.getElementById('wb-new-board-btn');
-    const undoBtn = document.getElementById('wb-undo-btn');
-    const clearBtn = document.getElementById('wb-clear-btn');
-    const extendBtn = document.getElementById('wb-extend-btn');
-    const fullscreenBtn = document.getElementById('wb-fullscreen-btn');
-    const sizeSlider = document.getElementById('wb-size');
-    const pageStyleSelect = document.getElementById('wb-page-style');
+    const shell = byId('shell');
+    const tabs = byId('tabs');
+    const canvas = byId('canvas');
+    const wrap = byId('canvas-wrap');
+    const workspace = byId('workspace');
+    const newBoardBtn = byId('new-board-btn');
+    const undoBtn = byId('undo-btn');
+    const clearBtn = byId('clear-btn');
+    const extendBtn = byId('extend-btn');
+    const fullscreenBtn = byId('fullscreen-btn');
+    const sizeSlider = byId('size');
+    const pageStyleSelect = byId('page-style');
+    const renameBtn = byId('rename-btn');
+    const imageBtn = byId('image-btn');
+    const imageInput = byId('image-input');
+    const exportBtn = byId('export-btn');
+    const zoomOutBtn = byId('zoom-out-btn');
+    const zoomInBtn = byId('zoom-in-btn');
+    const zoomLabel = byId('zoom-label');
 
     if (!canvas || !wrap || !tabs) return;
 
@@ -1859,6 +1918,7 @@ function initWhiteboardTile() {
     let currentColor = '#1f2937';
     let currentTool = 'pen';
     let penSize = 4;
+    let zoom = 1;
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
@@ -1914,6 +1974,18 @@ function initWhiteboardTile() {
       });
     }
 
+    function updateZoom() {
+      wrap.style.transform = `scale(${zoom})`;
+      wrap.style.transformOrigin = 'top center';
+      wrap.style.marginBottom = `${Math.max(0, (canvas.height * zoom) - canvas.height + 32)}px`;
+      if (zoomLabel) zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    function setZoom(nextZoom) {
+      zoom = Math.max(0.25, Math.min(3, nextZoom));
+      updateZoom();
+    }
+
     function setPageStyle(style) {
       wrap.classList.remove('page-transparent', 'page-plain', 'page-ruled', 'page-grid', 'page-dots', 'page-journal', 'page-dark');
       wrap.classList.add(`page-${style}`);
@@ -1932,6 +2004,7 @@ function initWhiteboardTile() {
       canvas.style.height = `${height}px`;
       wrap.style.width = `${width}px`;
       wrap.style.height = `${height}px`;
+      updateZoom();
 
       if (!snapshot) return;
       const img = new Image();
@@ -1959,6 +2032,7 @@ function initWhiteboardTile() {
       }
 
       if (workspace) workspace.scrollTop = 0;
+      updateZoom();
     }
 
     function pushUndo() {
@@ -1994,7 +2068,73 @@ function initWhiteboardTile() {
       }
     }
 
+    function buildExportDataUrl() {
+      const board = getActiveBoard();
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      const exportCtx = exportCanvas.getContext('2d');
+      const style = board?.pageStyle || 'transparent';
+
+      if (style === 'dark') {
+        exportCtx.fillStyle = '#111827';
+      } else if (style === 'transparent') {
+        exportCtx.fillStyle = '#ffffff';
+      } else if (style === 'journal') {
+        exportCtx.fillStyle = '#fffaf0';
+      } else {
+        exportCtx.fillStyle = '#fffdf8';
+      }
+      exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+      if (style === 'ruled' || style === 'journal') {
+        exportCtx.strokeStyle = style === 'journal' ? 'rgba(99,102,241,0.28)' : 'rgba(59,130,246,0.34)';
+        exportCtx.lineWidth = 1;
+        const gap = style === 'journal' ? 36 : 32;
+        for (let y = gap; y < exportCanvas.height; y += gap) {
+          exportCtx.beginPath();
+          exportCtx.moveTo(0, y);
+          exportCtx.lineTo(exportCanvas.width, y);
+          exportCtx.stroke();
+        }
+        exportCtx.strokeStyle = style === 'journal' ? 'rgba(244,114,182,0.34)' : 'rgba(239,68,68,0.32)';
+        exportCtx.lineWidth = 2;
+        exportCtx.beginPath();
+        exportCtx.moveTo(style === 'journal' ? 86 : 74, 0);
+        exportCtx.lineTo(style === 'journal' ? 86 : 74, exportCanvas.height);
+        exportCtx.stroke();
+      } else if (style === 'grid' || style === 'dark') {
+        exportCtx.strokeStyle = style === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(37,99,235,0.18)';
+        exportCtx.lineWidth = 1;
+        for (let x = 0; x < exportCanvas.width; x += 32) {
+          exportCtx.beginPath();
+          exportCtx.moveTo(x, 0);
+          exportCtx.lineTo(x, exportCanvas.height);
+          exportCtx.stroke();
+        }
+        for (let y = 0; y < exportCanvas.height; y += 32) {
+          exportCtx.beginPath();
+          exportCtx.moveTo(0, y);
+          exportCtx.lineTo(exportCanvas.width, y);
+          exportCtx.stroke();
+        }
+      } else if (style === 'dots') {
+        exportCtx.fillStyle = 'rgba(71,85,105,0.38)';
+        for (let x = 12; x < exportCanvas.width; x += 24) {
+          for (let y = 12; y < exportCanvas.height; y += 24) {
+            exportCtx.beginPath();
+            exportCtx.arc(x, y, 1.2, 0, Math.PI * 2);
+            exportCtx.fill();
+          }
+        }
+      }
+
+      exportCtx.drawImage(canvas, 0, 0);
+      return exportCanvas.toDataURL('image/png');
+    }
+
     function startDraw(e) {
+      if (e.touches && e.touches.length > 1) return;
       e.preventDefault();
       pushUndo();
       isDrawing = true;
@@ -2007,6 +2147,10 @@ function initWhiteboardTile() {
 
     function draw(e) {
       if (!isDrawing) return;
+      if (e.touches && e.touches.length > 1) {
+        endDraw();
+        return;
+      }
       e.preventDefault();
       const pos = getPos(e);
       applyToolStyle();
@@ -2034,22 +2178,22 @@ function initWhiteboardTile() {
     canvas.addEventListener('touchmove', draw, { passive: false });
     canvas.addEventListener('touchend', endDraw);
 
-    document.querySelectorAll('[data-tool]').forEach(btn => {
+    shell.querySelectorAll('[data-tool]').forEach(btn => {
       btn.addEventListener('click', () => {
         currentTool = btn.getAttribute('data-tool');
-        document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+        shell.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       });
     });
 
-    document.querySelectorAll('.wb-color-swatch').forEach(swatch => {
+    shell.querySelectorAll('.wb-color-swatch').forEach(swatch => {
       swatch.addEventListener('click', () => {
         currentColor = swatch.getAttribute('data-color');
-        document.querySelectorAll('.wb-color-swatch').forEach(s => s.classList.remove('active'));
+        shell.querySelectorAll('.wb-color-swatch').forEach(s => s.classList.remove('active'));
         swatch.classList.add('active');
         if (currentTool === 'eraser') {
           currentTool = 'pen';
-          document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.getAttribute('data-tool') === 'pen'));
+          shell.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.getAttribute('data-tool') === 'pen'));
         }
       });
     });
@@ -2107,6 +2251,102 @@ function initWhiteboardTile() {
       document.addEventListener('fullscreenchange', () => {
         shell.classList.toggle('is-fullscreen', document.fullscreenElement === shell);
       });
+    }
+
+    if (renameBtn) {
+      renameBtn.addEventListener('click', () => {
+        const board = getActiveBoard();
+        if (!board) return;
+        const nextName = prompt('Board name', board.name || 'Untitled');
+        if (!nextName) return;
+        board.name = nextName.trim() || board.name;
+        saveData();
+        renderTabs();
+      });
+    }
+
+    function placeImage(src) {
+      const img = new Image();
+      img.onload = () => {
+        pushUndo();
+        const maxW = canvas.width * 0.55;
+        const scale = Math.min(1, maxW / img.width);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        const x = Math.max(24, (canvas.width - w) / 2);
+        const y = Math.max(24, (workspace?.scrollTop || 0) / zoom + 40);
+        ctx.drawImage(img, x, y, w, h);
+        saveBoardImage();
+      };
+      img.src = src;
+    }
+
+    if (imageBtn && imageInput) {
+      imageBtn.addEventListener('click', () => imageInput.click());
+      imageInput.addEventListener('change', () => {
+        const file = imageInput.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => placeImage(reader.result);
+        reader.readAsDataURL(file);
+        imageInput.value = '';
+      });
+    }
+
+    shell.addEventListener('paste', (e) => {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+      if (!item) return;
+      const file = item.getAsFile();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => placeImage(reader.result);
+      reader.readAsDataURL(file);
+    });
+    shell.tabIndex = 0;
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        saveBoardImage();
+        const board = getActiveBoard();
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        const exportDataUrl = buildExportDataUrl();
+        printWindow.document.write(`
+          <html><head><title>${escapeHtml(board?.name || 'Whiteboard')}</title>
+          <style>body{margin:0;background:#fff;}img{width:100%;height:auto;display:block;}</style></head>
+          <body><img src="${exportDataUrl}" /></body></html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+      });
+    }
+
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => setZoom(zoom - 0.1));
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => setZoom(zoom + 0.1));
+    if (workspace) {
+      workspace.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        setZoom(zoom + (e.deltaY < 0 ? 0.08 : -0.08));
+      }, { passive: false });
+
+      let pinchDistance = null;
+      workspace.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 2) {
+          pinchDistance = null;
+          return;
+        }
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.hypot(dx, dy);
+        if (pinchDistance) setZoom(zoom + (distance - pinchDistance) / 450);
+        pinchDistance = distance;
+      }, { passive: false });
+      workspace.addEventListener('touchend', () => { pinchDistance = null; });
     }
 
     if (newBoardBtn) {
@@ -2322,6 +2562,55 @@ function initWhiteboardTile() {
     ro.observe(wrap);
   }
   loadBoard(0);
+}
+
+function initGlobalWhiteboardDrawer() {
+  if (document.getElementById('global-whiteboard-drawer')) return;
+
+  const drawer = document.createElement('div');
+  drawer.id = 'global-whiteboard-drawer';
+  drawer.className = 'global-whiteboard-drawer';
+  drawer.innerHTML = `
+    <button id="global-whiteboard-tab" class="global-whiteboard-tab" title="Whiteboard">Whiteboard</button>
+    <div id="global-whiteboard-resizer" class="global-whiteboard-resizer" title="Drag to resize"></div>
+    ${getWhiteboardMarkup('global-wb', 'global-whiteboard-shell')}
+  `;
+  document.body.appendChild(drawer);
+
+  const tab = document.getElementById('global-whiteboard-tab');
+  const resizer = document.getElementById('global-whiteboard-resizer');
+  const savedWidth = parseInt(localStorage.getItem('focus_fox_global_wb_width') || '720', 10);
+  drawer.style.width = `${Math.max(380, Math.min(window.innerWidth, savedWidth))}px`;
+
+  tab?.addEventListener('click', () => {
+    const nextOpen = drawer.dataset.open !== 'true';
+    drawer.dataset.open = nextOpen ? 'true' : 'false';
+    drawer.classList.toggle('open', nextOpen);
+    syncGlobalWhiteboardDrawer(store.currentView);
+  });
+
+  let resizing = false;
+  resizer?.addEventListener('mousedown', (e) => {
+    resizing = true;
+    drawer.classList.add('resizing');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!resizing) return;
+    const nextWidth = Math.max(380, Math.min(window.innerWidth, window.innerWidth - e.clientX));
+    drawer.style.width = `${nextWidth}px`;
+    localStorage.setItem('focus_fox_global_wb_width', String(nextWidth));
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!resizing) return;
+    resizing = false;
+    drawer.classList.remove('resizing');
+  });
+
+  initWhiteboardTile('global-wb');
+  syncGlobalWhiteboardDrawer(store.currentView);
 }
 
 // Function to handle Add Subject Custom Modal popup
