@@ -1619,6 +1619,7 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
       <div class="whiteboard-tabbar">
         <div class="whiteboard-tabs" id="${prefix}-tabs"></div>
         <div class="whiteboard-tabbar-actions">
+          <button class="tool-tile-btn" id="${prefix}-fullscreen-btn" title="Maximize">Maximize</button>
           <button class="tool-tile-btn toggle-tools-btn active" id="${prefix}-toggle-tools-btn" title="Toggle tools toolbar">🛠️ Tools</button>
           <button class="tool-tile-btn" id="${prefix}-new-board-btn" title="New whiteboard">+ Board</button>
         </div>
@@ -1688,7 +1689,6 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
             <button class="wb-tool-btn" id="${prefix}-extend-btn" title="Add more vertical space">Longer page</button>
             <button class="wb-tool-btn" id="${prefix}-undo-btn" title="Undo">Undo</button>
             <button class="wb-tool-btn" id="${prefix}-clear-btn" title="Clear board">Clear</button>
-            <button class="wb-tool-btn" id="${prefix}-fullscreen-btn" title="Fullscreen">Fullscreen</button>
           </div>
         </div>
       </div>
@@ -2255,6 +2255,12 @@ function initWhiteboardTile(prefix = 'page-wb') {
     }
 
     if (fullscreenBtn && shell) {
+      const updateFullscreenBtn = () => {
+        const isFS = shell.classList.contains('is-fullscreen') || document.fullscreenElement === shell;
+        fullscreenBtn.textContent = isFS ? 'Minimize' : 'Maximize';
+        fullscreenBtn.title = isFS ? 'Minimize' : 'Maximize';
+      };
+
       fullscreenBtn.addEventListener('click', async () => {
         shell.classList.toggle('is-fullscreen');
         try {
@@ -2264,11 +2270,17 @@ function initWhiteboardTile(prefix = 'page-wb') {
             await document.exitFullscreen();
           }
         } catch { }
+        updateFullscreenBtn();
       });
 
       document.addEventListener('fullscreenchange', () => {
-        shell.classList.toggle('is-fullscreen', document.fullscreenElement === shell);
+        const isFS = document.fullscreenElement === shell;
+        shell.classList.toggle('is-fullscreen', isFS);
+        updateFullscreenBtn();
       });
+
+      // Init state
+      updateFullscreenBtn();
     }
 
     const toggleToolsBtn = document.getElementById(`${prefix}-toggle-tools-btn`);
