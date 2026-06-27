@@ -3977,13 +3977,50 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   fill: none;
 }
 
-/* Dashboard Top Grid */
+
+
+/* Dashboard Top Panel Drawer styles */
 .subjects-dashboard-top {
-  display: grid;
-  grid-template-columns: 240px 1fr 200px;
+  position: fixed;
+  top: 90px;
+  right: -520px;
+  width: 500px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 20px;
-  align-items: stretch;
-  margin-bottom: 12px;
+  padding: 20px;
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
+}
+
+.subjects-dashboard-top.drawer-open {
+  right: 0px;
+}
+
+/* Sliding Toggle Tab button style for the stats drawer */
+.subjects-drawer-tab {
+  position: absolute;
+  left: -90px;
+  top: 50px;
+  height: 38px;
+  background: var(--primary);
+  color: #171330;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0 14px;
+  border-radius: 6px 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  font-family: var(--font-sans);
+  user-select: none;
 }
 
 .left-stats-column {

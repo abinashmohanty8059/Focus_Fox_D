@@ -1060,7 +1060,7 @@ async function renderSubjectsView() {
     // Cell 107 is today. Cell 0 is (today - 107 days)
     const cellDate = new Date(now);
     cellDate.setDate(now.getDate() - (107 - i));
-    
+
     const year = cellDate.getFullYear();
     const month = String(cellDate.getMonth() + 1).padStart(2, '0');
     const day = String(cellDate.getDate()).padStart(2, '0');
@@ -1181,11 +1181,14 @@ async function renderSubjectsView() {
     </div>
   `;
 
+
   viewContainer.innerHTML = `
-    <!-- Top Stats and Heatmap Row -->
-    <div class="subjects-dashboard-top">
+    <!-- Top Stats Drawer Row (Floats on Right side of Subjects Screen only) -->
+    <div class="subjects-dashboard-top" id="subjects-stats-drawer">
+      <div class="subjects-drawer-tab" id="subjects-stats-drawer-tab">
+         Stats <span id="subjects-stats-drawer-arrow">◀</span>
+      </div>
       ${statsLeftColumnHtml}
-      ${heatmapHtml}
       ${miniCalendarCardHtml}
     </div>
 
@@ -1277,11 +1280,29 @@ async function renderSubjectsView() {
     miniCalTrigger.addEventListener('click', () => {
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
+  }  // Attach stats drawer pull tab click toggle logic
+  const statsDrawer = document.getElementById('subjects-stats-drawer');
+  const statsDrawerTab = document.getElementById('subjects-stats-drawer-tab');
+  const statsDrawerArrow = document.getElementById('subjects-stats-drawer-arrow');
+
+  if (statsDrawer && statsDrawerTab) {
+    let isStatsDrawerOpen = false;
+    statsDrawerTab.addEventListener('click', () => {
+      isStatsDrawerOpen = !isStatsDrawerOpen;
+      if (isStatsDrawerOpen) {
+        statsDrawer.classList.add('drawer-open');
+        if (statsDrawerArrow) statsDrawerArrow.textContent = '▶';
+      } else {
+        statsDrawer.classList.remove('drawer-open');
+        if (statsDrawerArrow) statsDrawerArrow.textContent = '◀';
+      }
+    });
   }
 
   // Initialize Scratch Music Player logic
   initScratchMusicPlayer();
 }
+
 
 // Global audio object for the scratch music player to ensure persistent playing across view re-renders
 let scratchAudioObj = null;
@@ -1326,7 +1347,7 @@ async function initScratchMusicPlayer() {
   if (!scratchAudioObj) {
     scratchAudioObj = new Audio();
     scratchAudioObj.volume = 0.7;
-    
+
     // Attempt to load music folder files via Tauri backend, fall back on lofi stream URLs
     try {
       if (window.__TAURI__) {
@@ -1369,7 +1390,7 @@ async function initScratchMusicPlayer() {
   const wVolumeSlider = document.getElementById('drawer-volume-slider');
 
   function updatePlayerUI() {
-    const playSvgHtml = scratchIsPlaying 
+    const playSvgHtml = scratchIsPlaying
       ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
       : `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
     const drawerPlaySvgHtml = scratchIsPlaying
@@ -1379,7 +1400,7 @@ async function initScratchMusicPlayer() {
     // Dashboard card components update
     if (dPlayBtn) dPlayBtn.innerHTML = playSvgHtml;
     if (dTrackName) dTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
-    
+
     // Bottom sliding drawer components update
     if (wPlayBtn) wPlayBtn.innerHTML = drawerPlaySvgHtml;
     if (wTrackName) wTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
@@ -1440,7 +1461,7 @@ async function initScratchMusicPlayer() {
   scratchAudioObj.src = oldAudio.src;
   scratchAudioObj.currentTime = oldAudio.currentTime;
   if (scratchIsPlaying) {
-    scratchAudioObj.play().catch(() => {});
+    scratchAudioObj.play().catch(() => { });
   }
 
   // Set up synchronization listeners
@@ -2250,7 +2271,7 @@ function openHeatmapAnalyticsModal(subjectsData = [], overallProgressPercentage 
       calendarContainer.style.display = 'flex';
       calendarContainer.style.flexDirection = 'column';
       calendarContainer.style.gap = '12px';
-      
+
       // Insert right after the top analytics-grid
       const analyticsGrid = modalBody.querySelector('.analytics-grid');
       if (analyticsGrid && analyticsGrid.nextSibling) {
@@ -2264,7 +2285,7 @@ function openHeatmapAnalyticsModal(subjectsData = [], overallProgressPercentage 
   const renderModalCalendar = (range = "This Month") => {
     if (!calendarContainer) return;
     const data = generateCalendarHeatmapHtml(range, false); // false = large calendar with day numbers
-    
+
     calendarContainer.innerHTML = `
       <div class="activity-header" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border: none; background: transparent; padding: 0;">
         <div style="display: flex; flex-direction: column;">
