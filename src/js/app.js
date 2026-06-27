@@ -1608,21 +1608,25 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
     <div class="whiteboard-shell ${extraClass}" id="${prefix}-shell">
       <div class="whiteboard-tabbar">
         <div class="whiteboard-tabs" id="${prefix}-tabs"></div>
-        <button class="tool-tile-btn" id="${prefix}-new-board-btn" title="New whiteboard">+ Board</button>
+        <div class="whiteboard-tabbar-actions">
+          <button class="tool-tile-btn toggle-tools-btn active" id="${prefix}-toggle-tools-btn" title="Toggle tools toolbar">🛠️ Tools</button>
+          <button class="tool-tile-btn" id="${prefix}-new-board-btn" title="New whiteboard">+ Board</button>
+        </div>
       </div>
 
-      <div class="whiteboard-main">
-        <aside class="whiteboard-side-tools">
-          <div class="whiteboard-side-section">
-            <span class="whiteboard-side-label">Tools</span>
+      <!-- Collapsible Top Tools Panel -->
+      <div class="whiteboard-top-tools" id="${prefix}-top-tools">
+        <div class="whiteboard-tool-row" style="margin-bottom: 8px;">
+          <div class="whiteboard-tool-group">
+            <span class="whiteboard-group-label">Tools</span>
             <button class="wb-tool-btn active" data-tool="pen" title="Pen">Pen</button>
             <button class="wb-tool-btn" data-tool="marker" title="Marker">Marker</button>
             <button class="wb-tool-btn" data-tool="highlighter" title="Highlighter">Highlighter</button>
             <button class="wb-tool-btn" data-tool="eraser" title="Eraser">Eraser</button>
           </div>
 
-          <div class="whiteboard-side-section">
-            <span class="whiteboard-side-label">Color</span>
+          <div class="whiteboard-tool-group" style="margin-left: 10px;">
+            <span class="whiteboard-group-label">Color</span>
             <div class="whiteboard-color-grid">
               <div class="wb-color-swatch active" style="background:#1f2937;" data-color="#1f2937" title="Ink"></div>
               <div class="wb-color-swatch" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></div>
@@ -1635,14 +1639,14 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
             </div>
           </div>
 
-          <div class="whiteboard-side-section">
-            <label class="whiteboard-field stacked">
+          <div class="whiteboard-tool-group" style="margin-left: 10px;">
+            <label class="whiteboard-field inline">
               <span>Size</span>
-              <input type="range" class="wb-size-slider" id="${prefix}-size" min="1" max="44" value="4" title="Stroke size" />
+              <input type="range" class="wb-size-slider" id="${prefix}-size" min="1" max="44" value="4" style="width: 80px; margin-left: 4px;" title="Stroke size" />
             </label>
-            <label class="whiteboard-field stacked">
+            <label class="whiteboard-field inline" style="margin-left: 10px;">
               <span>Page</span>
-              <select id="${prefix}-page-style" class="whiteboard-select" title="Page style">
+              <select id="${prefix}-page-style" class="whiteboard-select" style="margin-left: 4px;" title="Page style">
                 <option value="transparent">Transparent</option>
                 <option value="plain">Plain</option>
                 <option value="ruled">Ruled</option>
@@ -1653,17 +1657,19 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
               </select>
             </label>
           </div>
+        </div>
 
-          <div class="whiteboard-side-section">
-            <span class="whiteboard-side-label">Files</span>
+        <div class="whiteboard-tool-row">
+          <div class="whiteboard-tool-group">
+            <span class="whiteboard-group-label">Files</span>
             <button class="wb-tool-btn" id="${prefix}-rename-btn" title="Rename board">Rename</button>
             <button class="wb-tool-btn" id="${prefix}-image-btn" title="Paste or import image">Image</button>
             <input type="file" id="${prefix}-image-input" accept="image/*" style="display:none;" />
             <button class="wb-tool-btn" id="${prefix}-export-btn" title="Export PDF">Export PDF</button>
           </div>
 
-          <div class="whiteboard-side-section">
-            <span class="whiteboard-side-label">View</span>
+          <div class="whiteboard-tool-group" style="margin-left: 16px;">
+            <span class="whiteboard-group-label">View</span>
             <div class="whiteboard-zoom-row">
               <button class="wb-tool-btn" id="${prefix}-zoom-out-btn" title="Zoom out">-</button>
               <span id="${prefix}-zoom-label">100%</span>
@@ -1674,8 +1680,10 @@ function getWhiteboardMarkup(prefix, extraClass = '') {
             <button class="wb-tool-btn" id="${prefix}-clear-btn" title="Clear board">Clear</button>
             <button class="wb-tool-btn" id="${prefix}-fullscreen-btn" title="Fullscreen">Fullscreen</button>
           </div>
-        </aside>
+        </div>
+      </div>
 
+      <div class="whiteboard-main">
         <div class="whiteboard-workspace" id="${prefix}-workspace">
           <div class="whiteboard-canvas-wrap page-transparent" id="${prefix}-canvas-wrap">
             <canvas id="${prefix}-canvas"></canvas>
@@ -2251,6 +2259,25 @@ function initWhiteboardTile(prefix = 'page-wb') {
       document.addEventListener('fullscreenchange', () => {
         shell.classList.toggle('is-fullscreen', document.fullscreenElement === shell);
       });
+    }
+
+    const toggleToolsBtn = document.getElementById(`${prefix}-toggle-tools-btn`);
+    const topTools = document.getElementById(`${prefix}-top-tools`);
+    if (toggleToolsBtn && topTools) {
+      toggleToolsBtn.addEventListener('click', () => {
+        const isCollapsed = topTools.classList.toggle('collapsed');
+        toggleToolsBtn.classList.toggle('active', !isCollapsed);
+        localStorage.setItem(`focus_fox_${prefix}_tools_collapsed`, isCollapsed);
+      });
+
+      // Restore saved collapsed state
+      const savedCollapsed = localStorage.getItem(`focus_fox_${prefix}_tools_collapsed`) === 'true';
+      if (savedCollapsed) {
+        topTools.classList.add('collapsed');
+        toggleToolsBtn.classList.remove('active');
+      } else {
+        toggleToolsBtn.classList.add('active');
+      }
     }
 
     if (renameBtn) {
