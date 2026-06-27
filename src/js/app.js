@@ -62,7 +62,6 @@ async function init() {
   navAlgo = document.getElementById('nav-algo');
   navAbout = document.getElementById('nav-about');
   navSyllabus = document.getElementById('nav-syllabus');
-  const navNotes = document.getElementById('nav-notes');
   const navWhiteboard = document.getElementById('nav-whiteboard');
   lightbox = document.getElementById('lightbox');
   lightboxImg = document.getElementById('lightbox-img');
@@ -165,10 +164,6 @@ function bindEvents() {
     });
   }
 
-  const navNotesEl = document.getElementById('nav-notes');
-  if (navNotesEl) {
-    navNotesEl.addEventListener('click', () => store.navigateTo('notes-app'));
-  }
 
   const navWhiteboardEl = document.getElementById('nav-whiteboard');
   if (navWhiteboardEl) {
@@ -354,9 +349,7 @@ function updateSidebarActiveState(view) {
   if (navAlgo) navAlgo.classList.remove('active');
   if (navAbout) navAbout.classList.remove('active');
   if (navSyllabus) navSyllabus.classList.remove('active');
-  const navNotesEl = document.getElementById('nav-notes');
   const navWbEl = document.getElementById('nav-whiteboard');
-  if (navNotesEl) navNotesEl.classList.remove('active');
   if (navWbEl) navWbEl.classList.remove('active');
 
   if (view === 'subjects' || view === 'subject-dashboard' || view === 'question-list' || view === 'question-detail') {
@@ -369,8 +362,6 @@ function updateSidebarActiveState(view) {
     if (navAbout) navAbout.classList.add('active');
   } else if (view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution') {
     if (navAlgo) navAlgo.classList.add('active');
-  } else if (view === 'notes-app') {
-    if (navNotesEl) navNotesEl.classList.add('active');
   } else if (view === 'whiteboard-app') {
     if (navWbEl) navWbEl.classList.add('active');
   }
@@ -448,9 +439,6 @@ function updateHeader(view, data) {
   } else if (view === 'leetcode-webview') {
     headerTitleText.textContent = q ? q.question_name : "LeetCode";
     headerSubtitleText.textContent = "In-app LeetCode Browser";
-  } else if (view === 'notes-app') {
-    headerTitleText.textContent = "Notes";
-    headerSubtitleText.textContent = "Your personal study notes, all saved locally";
   } else if (view === 'whiteboard-app') {
     headerTitleText.textContent = "Whiteboard";
     headerSubtitleText.textContent = "Sketch, draw, and brainstorm — all saved locally";
@@ -594,9 +582,6 @@ async function renderView(view, data) {
         break;
       case 'leetcode-webview':
         renderLeetcodeWebview();
-        break;
-      case 'notes-app':
-        renderNotesView();
         break;
       case 'whiteboard-app':
         renderWhiteboardView();

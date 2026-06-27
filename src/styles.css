@@ -584,12 +584,12 @@ aside.sidebar.collapsed .user-info {
 }
 
 .sidebar-nav {
-  padding: 28px 16px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: flex-start;
   flex: 1 1 auto;
-  gap: 22px; /* Minimum consistent premium spacing */
+  gap: 14px; /* Consistent premium spacing reduced by 8px */
   overflow-y: auto;
   min-height: 0;
   scrollbar-width: none; /* Firefox */
