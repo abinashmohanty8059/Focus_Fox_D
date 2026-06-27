@@ -102,10 +102,7 @@ async function init() {
   // Initialize sidebar stopwatch
   initStopwatch();
 
-  // Initialize sidebar music player
-  initMusicPlayer();
-
-  // Render initial view
+  // Load initial view based on coursework selection
   if (store.selectedBranch && store.selectedSemester) {
     navDashboard.style.display = 'flex';
     if (navSyllabus) navSyllabus.style.display = 'flex';
@@ -1085,8 +1082,35 @@ async function renderSubjectsView() {
   });
 
   const heatmapHtml = `
-    <div class="study-activity-card fade-in" style="justify-content: center; align-items: center; min-height: 120px; overflow: hidden; padding: 6px;">
-      <lottie-player src="/animation/Blue_Whale.json" background="transparent" speed="1" style="width: 100%; max-width: 480px; height: 100%; max-height: 110px;" loop autoplay></lottie-player>
+    <div class="study-activity-card fade-in" id="scratch-music-player-container" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; padding: 12px; gap: 8px; cursor: default; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+          🎵 Focus Tunes
+        </span>
+        <span id="scratch-track-name" style="font-size: 0.75rem; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">Loading track...</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; justify-content: center; margin: 4px 0;">
+        <button class="player-btn" id="scratch-prev-btn" style="width: 28px; height: 28px;" title="Previous">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="4" x2="5" y2="20" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <button class="player-btn play-btn" id="scratch-play-btn" style="width: 34px; height: 34px; background: var(--primary); display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #171330; border: none; cursor: pointer;" title="Play">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" id="scratch-play-svg"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="player-btn" id="scratch-next-btn" style="width: 28px; height: 28px;" title="Next">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="4" x2="19" y2="20" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div id="scratch-progress-bar" style="height: 5px; background: var(--bg); border-radius: 3px; position: relative; cursor: pointer; overflow: hidden;">
+          <div id="scratch-progress-fill" style="height: 100%; width: 0%; background: var(--primary); border-radius: 3px; transition: width 0.1s linear;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--subtext); font-weight: 500;">
+          <span id="scratch-time-current">0:00</span>
+          <span id="scratch-time-total">0:00</span>
+        </div>
+      </div>
     </div>
   `;
 
@@ -1099,7 +1123,7 @@ async function renderSubjectsView() {
         <span class="activity-subtitle" style="font-size: 0.65rem; color: var(--subtext); font-weight: 600;">${miniCalData.monthName}</span>
       </div>
       <div class="heatmap-container mini-calendar" style="width: 100%; border: none; background: transparent; padding: 0;">
-        <div class="heatmap-grid" style="grid-template-columns: repeat(7, 12px); justify-content: center; gap: 3px; width: auto; margin: 0 auto;">
+        <div class="heatmap-grid" style="grid-template-columns: repeat(7, 14px); justify-content: center; gap: 4px; width: auto; margin: 0 auto;">
           ${miniCalData.headersHtml}
           ${miniCalData.cellsHtml}
         </div>
@@ -1225,7 +1249,6 @@ async function renderSubjectsView() {
       renderSubjectsView();
     });
   });
-
   // Attach click to Add Subject trigger
   const addTrigger = document.getElementById('add-subject-trigger');
   if (addTrigger) {
@@ -1238,12 +1261,12 @@ async function renderSubjectsView() {
     enrolledTrigger.addEventListener('click', () => openEnrolledSubjectsModal());
   }
 
-  // Attach click to Heatmap Analytics card
-  const heatmapTrigger = viewContainer.querySelector('.study-activity-card');
+  // Attach click to Heatmap Analytics card (for music player container, ignore calendar click)
+  const heatmapTrigger = viewContainer.querySelector('#scratch-music-player-container');
   if (heatmapTrigger) {
     heatmapTrigger.addEventListener('click', (e) => {
-      // Don't trigger modal if dropdown is clicked
-      if (e.target.closest('.activity-select')) return;
+      // Don't trigger modal if child controls are clicked
+      if (e.target.closest('#scratch-play-btn') || e.target.closest('#scratch-prev-btn') || e.target.closest('#scratch-next-btn') || e.target.closest('#scratch-progress-bar')) return;
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
   }
@@ -1255,9 +1278,234 @@ async function renderSubjectsView() {
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
   }
+
+  // Initialize Scratch Music Player logic
+  initScratchMusicPlayer();
 }
 
-// Function to handle Add Subject Custom Modal popup
+// Global audio object for the scratch music player to ensure persistent playing across view re-renders
+let scratchAudioObj = null;
+let scratchPlaylist = [
+  { name: "Rainy Cafe Ambient Lofi", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { name: "Study Focus Deep Brownian Noise", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { name: "Chill Autumn Breeze Lofi Beats", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+];
+let scratchCurrentIndex = 0;
+let scratchIsPlaying = false;
+let isDrawerOpen = false;
+
+// Global persistent sliding drawer toggle helper
+function initGlobalMusicPlayerDrawer() {
+  const drawer = document.getElementById('global-music-player-drawer');
+  const tab = document.getElementById('global-music-player-tab');
+  const arrow = document.getElementById('global-music-player-arrow');
+
+  if (!drawer || !tab) return;
+
+  // Single listener attached globally once
+  if (tab.getAttribute('data-bound') === 'true') return;
+  tab.setAttribute('data-bound', 'true');
+
+  tab.addEventListener('click', () => {
+    isDrawerOpen = !isDrawerOpen;
+    if (isDrawerOpen) {
+      drawer.style.bottom = '0px';
+      if (arrow) arrow.textContent = '▼';
+    } else {
+      drawer.style.bottom = '-80px';
+      if (arrow) arrow.textContent = '▲';
+    }
+  });
+}
+
+async function initScratchMusicPlayer() {
+  // Setup persistent global sliding drawer toggle once
+  initGlobalMusicPlayerDrawer();
+
+  // Initialize audio object once globally
+  if (!scratchAudioObj) {
+    scratchAudioObj = new Audio();
+    scratchAudioObj.volume = 0.7;
+    
+    // Attempt to load music folder files via Tauri backend, fall back on lofi stream URLs
+    try {
+      if (window.__TAURI__) {
+        const files = await invoke('list_music_files');
+        if (files && files.length > 0) {
+          scratchPlaylist = files.map(file => {
+            const name = file.split(/[/\\]/).pop().replace(/\.[^/.]+$/, "");
+            const webviewSrc = window.__TAURI__.core.convertFileSrc(file);
+            return { name, src: webviewSrc };
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load local music files, using web lofi presets:", err);
+    }
+
+    // Load first track initially
+    loadScratchTrack(0, false);
+  }
+
+  // Bind controls for Dashboard Widget Player
+  const dPlayBtn = document.getElementById('scratch-play-btn');
+  const dPrevBtn = document.getElementById('scratch-prev-btn');
+  const dNextBtn = document.getElementById('scratch-next-btn');
+  const dProgressBar = document.getElementById('scratch-progress-bar');
+  const dProgressFill = document.getElementById('scratch-progress-fill');
+  const dTrackName = document.getElementById('scratch-track-name');
+  const dTimeCurrent = document.getElementById('scratch-time-current');
+  const dTimeTotal = document.getElementById('scratch-time-total');
+
+  // Bind controls for Collapsible Sliding bottom Drawer Player
+  const wPlayBtn = document.getElementById('drawer-play-btn');
+  const wPrevBtn = document.getElementById('drawer-prev-btn');
+  const wNextBtn = document.getElementById('drawer-next-btn');
+  const wProgressBar = document.getElementById('drawer-progress-bar');
+  const wProgressFill = document.getElementById('drawer-progress-fill');
+  const wTrackName = document.getElementById('drawer-track-name');
+  const wTimeCurrent = document.getElementById('drawer-time-current');
+  const wTimeTotal = document.getElementById('drawer-time-total');
+  const wVolumeSlider = document.getElementById('drawer-volume-slider');
+
+  function updatePlayerUI() {
+    const playSvgHtml = scratchIsPlaying 
+      ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
+      : `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    const drawerPlaySvgHtml = scratchIsPlaying
+      ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
+      : `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+
+    // Dashboard card components update
+    if (dPlayBtn) dPlayBtn.innerHTML = playSvgHtml;
+    if (dTrackName) dTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
+    
+    // Bottom sliding drawer components update
+    if (wPlayBtn) wPlayBtn.innerHTML = drawerPlaySvgHtml;
+    if (wTrackName) wTrackName.textContent = scratchPlaylist[scratchCurrentIndex].name;
+  }
+
+  function loadScratchTrack(index, autoplay = true) {
+    if (scratchPlaylist.length === 0) return;
+    scratchCurrentIndex = index;
+    scratchAudioObj.src = scratchPlaylist[scratchCurrentIndex].src;
+    scratchAudioObj.load();
+    updatePlayerUI();
+    if (autoplay) {
+      scratchAudioObj.play().then(() => {
+        scratchIsPlaying = true;
+        updatePlayerUI();
+      }).catch(err => console.warn("Autoplay blocked/failed:", err));
+    }
+  }
+
+  function toggleScratchPlay() {
+    if (scratchPlaylist.length === 0) return;
+    if (scratchIsPlaying) {
+      scratchAudioObj.pause();
+      scratchIsPlaying = false;
+    } else {
+      scratchAudioObj.play().then(() => {
+        scratchIsPlaying = true;
+      }).catch(err => console.error("Playback failed:", err));
+    }
+    updatePlayerUI();
+  }
+
+  function scratchNext() {
+    loadScratchTrack((scratchCurrentIndex + 1) % scratchPlaylist.length, true);
+  }
+
+  function scratchPrev() {
+    loadScratchTrack((scratchCurrentIndex - 1 + scratchPlaylist.length) % scratchPlaylist.length, true);
+  }
+
+  function formatTimeVal(secs) {
+    if (isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  // Remove existing listeners on the global audio object to prevent duplication on view re-renders
+  const newAudioObj = scratchAudioObj.cloneNode(true);
+  scratchAudioObj.parentNode?.replaceChild(newAudioObj, scratchAudioObj);
+  // Re-fetch clean references
+  scratchAudioObj.replaceWith(scratchAudioObj.cloneNode(true));
+  // Standard cloning mechanism for events refresh:
+  const oldAudio = scratchAudioObj;
+  scratchAudioObj = oldAudio.cloneNode(true);
+  // Copy settings
+  scratchAudioObj.volume = oldAudio.volume;
+  scratchAudioObj.src = oldAudio.src;
+  scratchAudioObj.currentTime = oldAudio.currentTime;
+  if (scratchIsPlaying) {
+    scratchAudioObj.play().catch(() => {});
+  }
+
+  // Set up synchronization listeners
+  scratchAudioObj.addEventListener('timeupdate', () => {
+    if (scratchAudioObj.duration) {
+      const pct = (scratchAudioObj.currentTime / scratchAudioObj.duration) * 100;
+      const formattedCurrent = formatTimeVal(scratchAudioObj.currentTime);
+      const formattedTotal = formatTimeVal(scratchAudioObj.duration);
+
+      // Synchronize dashboard widget time displays
+      if (dProgressFill) dProgressFill.style.width = `${pct}%`;
+      if (dTimeCurrent) dTimeCurrent.textContent = formattedCurrent;
+      if (dTimeTotal) dTimeTotal.textContent = formattedTotal;
+
+      // Synchronize bottom sliding drawer time displays
+      if (wProgressFill) wProgressFill.style.width = `${pct}%`;
+      if (wTimeCurrent) wTimeCurrent.textContent = formattedCurrent;
+      if (wTimeTotal) wTimeTotal.textContent = formattedTotal;
+    }
+  });
+
+  scratchAudioObj.addEventListener('loadedmetadata', () => {
+    const formattedTotal = formatTimeVal(scratchAudioObj.duration);
+    if (dTimeTotal) dTimeTotal.textContent = formattedTotal;
+    if (wTimeTotal) wTimeTotal.textContent = formattedTotal;
+  });
+
+  scratchAudioObj.addEventListener('ended', () => {
+    scratchNext();
+  });
+
+  // Attach controls listeners
+  if (dPlayBtn) dPlayBtn.addEventListener('click', toggleScratchPlay);
+  if (wPlayBtn) wPlayBtn.addEventListener('click', toggleScratchPlay);
+
+  if (dNextBtn) dNextBtn.addEventListener('click', scratchNext);
+  if (wNextBtn) wNextBtn.addEventListener('click', scratchNext);
+
+  if (dPrevBtn) dPrevBtn.addEventListener('click', scratchPrev);
+  if (wPrevBtn) wPrevBtn.addEventListener('click', scratchPrev);
+
+  // Seek functionality on progress bar clicks
+  function seekTrack(e, barElement) {
+    if (!scratchAudioObj.duration || scratchPlaylist.length === 0) return;
+    const rect = barElement.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const percentage = Math.max(0, Math.min(1, clickX / width));
+    scratchAudioObj.currentTime = percentage * scratchAudioObj.duration;
+  }
+
+  if (dProgressBar) dProgressBar.addEventListener('click', (e) => seekTrack(e, dProgressBar));
+  if (wProgressBar) wProgressBar.addEventListener('click', (e) => seekTrack(e, wProgressBar));
+
+  // Sync Volume control
+  if (wVolumeSlider) {
+    wVolumeSlider.value = scratchAudioObj.volume;
+    wVolumeSlider.addEventListener('input', () => {
+      scratchAudioObj.volume = wVolumeSlider.value;
+    });
+  }
+
+  // Update visual state immediately
+  updatePlayerUI();
+}// Function to handle Add Subject Custom Modal popup
 // =====================================================================
 // Full-page Notes View (sidebar nav)
 // =====================================================================
@@ -4318,166 +4566,7 @@ async function renderSettingsView() {
   });
 }
 
-// Mini Music Player Logic
-async function initMusicPlayer() {
-  const audio = new Audio();
-  let playlist = [];
-  let currentTrackIndex = 0;
-  let isPlaying = false;
 
-  const playBtn = document.getElementById('player-play-btn');
-  const prevBtn = document.getElementById('player-prev-btn');
-  const nextBtn = document.getElementById('player-next-btn');
-  const progressBar = document.getElementById('player-progress-bar');
-  const progressFill = document.getElementById('player-progress-fill');
-  const timeText = document.getElementById('player-time');
-  const volumeSlider = document.getElementById('player-volume-slider');
-
-  // Fallback playlist with high quality lofi ambient URLs
-  const fallbackPlaylist = [
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
-  ];
-
-  // Load songs from the 'music' folder via Rust backend
-  try {
-    const files = await invoke('list_music_files');
-    if (files && files.length > 0) {
-      console.log(`Loaded ${files.length} songs from the music folder.`);
-      playlist = files;
-    } else {
-      console.log("Music folder is empty. Using default ambient fallback songs.");
-      playlist = fallbackPlaylist;
-    }
-  } catch (err) {
-    console.error("Failed to load music files, using fallbacks:", err);
-    playlist = fallbackPlaylist;
-  }
-
-  // Load track helper
-  function loadTrack(index) {
-    if (playlist.length === 0) return;
-
-    currentTrackIndex = index;
-    const trackPath = playlist[currentTrackIndex];
-
-    // Convert local system file path to WebView loadable URL if it's not a remote URL
-    let src = trackPath;
-    if (window.__TAURI__ && !trackPath.startsWith('http')) {
-      src = window.__TAURI__.core.convertFileSrc(trackPath);
-    }
-
-    audio.src = src;
-    audio.load();
-    progressFill.style.width = '0%';
-    timeText.textContent = `0:00 / 0:00`;
-  }
-
-  // Play/Pause helper
-  function togglePlay() {
-    if (playlist.length === 0) return;
-
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(err => console.error("Audio playback error:", err));
-    }
-  }
-
-  // Update play button icon
-  function updatePlayButtonUI() {
-    if (!playBtn) return;
-    if (isPlaying) {
-      playBtn.innerHTML = `<svg viewBox="0 0 24 24" id="play-icon"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-      playBtn.title = "Pause";
-    } else {
-      playBtn.innerHTML = `<svg viewBox="0 0 24 24" id="play-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-      playBtn.title = "Play";
-    }
-  }
-
-  // Format seconds to M:SS
-  function formatTime(secs) {
-    if (isNaN(secs)) return '0:00';
-    const minutes = Math.floor(secs / 60);
-    const seconds = Math.floor(secs % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  }
-
-  // Next Track
-  function nextTrack() {
-    let nextIndex = (currentTrackIndex + 1) % playlist.length;
-    loadTrack(nextIndex);
-    if (isPlaying) {
-      audio.play().catch(e => console.error(e));
-    }
-  }
-
-  // Previous Track
-  function prevTrack() {
-    let prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-    loadTrack(prevIndex);
-    if (isPlaying) {
-      audio.play().catch(e => console.error(e));
-    }
-  }
-
-  // Bind controls
-  if (playBtn) playBtn.addEventListener('click', togglePlay);
-  if (prevBtn) prevBtn.addEventListener('click', prevTrack);
-  if (nextBtn) nextBtn.addEventListener('click', nextTrack);
-
-  // Audio Event Listeners
-  audio.addEventListener('play', () => {
-    isPlaying = true;
-    updatePlayButtonUI();
-  });
-
-  audio.addEventListener('pause', () => {
-    isPlaying = false;
-    updatePlayButtonUI();
-  });
-
-  audio.addEventListener('timeupdate', () => {
-    if (audio.duration) {
-      const pct = (audio.currentTime / audio.duration) * 100;
-      progressFill.style.width = `${pct}%`;
-      timeText.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
-    }
-  });
-
-  audio.addEventListener('loadedmetadata', () => {
-    timeText.textContent = `0:00 / ${formatTime(audio.duration)}`;
-  });
-
-  audio.addEventListener('ended', () => {
-    nextTrack();
-  });
-
-  // Click on progress bar to seek
-  if (progressBar) {
-    progressBar.addEventListener('click', (e) => {
-      if (!audio.duration || playlist.length === 0) return;
-      const rect = progressBar.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
-      const width = rect.width;
-      const percentage = Math.max(0, Math.min(1, clickX / width));
-      audio.currentTime = percentage * audio.duration;
-    });
-  }
-
-  // Volume slider control
-  if (volumeSlider) {
-    volumeSlider.addEventListener('input', () => {
-      audio.volume = volumeSlider.value;
-    });
-    audio.volume = volumeSlider.value;
-  }
-
-  // Initial load
-  loadTrack(0);
-}
 
 // Mini Stopwatch Logic
 function initStopwatch() {
