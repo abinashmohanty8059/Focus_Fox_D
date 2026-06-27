@@ -6603,9 +6603,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   min-height: 0;
   overflow: auto;
   padding: 26px;
-  background:
-    radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.12), transparent 300px),
-    var(--bg);
+  background: var(--bg);
 }
 
 .global-whiteboard-drawer {
