@@ -3983,12 +3983,14 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 
 
 
+
+
 /* Dashboard Top Panel Drawer styles */
 .subjects-dashboard-top {
   position: fixed;
   top: 90px;
-  right: -670px;
-  width: 650px;
+  right: -600px;
+  width: 580px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);

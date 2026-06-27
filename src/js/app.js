@@ -1191,8 +1191,9 @@ async function renderSubjectsView() {
          Stats <span id="subjects-stats-drawer-arrow">◀</span>
       </div>
 
+
       ${statsLeftColumnHtml}
-      <div style="width: 170px; height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent;">
+      <div style="width: 170px; height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent; margin-left: -36px; margin-right: -36px; z-index: 1;">
         <lottie-player src="/animation/Fox_stydying.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
       </div>
       ${miniCalendarCardHtml}
