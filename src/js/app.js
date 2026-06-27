@@ -1182,13 +1182,19 @@ async function renderSubjectsView() {
   `;
 
 
+
+
   viewContainer.innerHTML = `
     <!-- Top Stats Drawer Row (Floats on Right side of Subjects Screen only) -->
     <div class="subjects-dashboard-top" id="subjects-stats-drawer">
       <div class="subjects-drawer-tab" id="subjects-stats-drawer-tab">
          Stats <span id="subjects-stats-drawer-arrow">◀</span>
       </div>
+
       ${statsLeftColumnHtml}
+      <div style="width: 170px; height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent;">
+        <lottie-player src="/animation/Fox_stydying.json" background="transparent" speed="1" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+      </div>
       ${miniCalendarCardHtml}
     </div>
 
@@ -1273,17 +1279,16 @@ async function renderSubjectsView() {
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
   }
-
   // Attach click to Right Mini Calendar trigger
   const miniCalTrigger = viewContainer.querySelector('#mini-calendar-trigger');
   if (miniCalTrigger) {
     miniCalTrigger.addEventListener('click', () => {
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
-  }  // Attach stats drawer pull tab click toggle logic
-  const statsDrawer = document.getElementById('subjects-stats-drawer');
-  const statsDrawerTab = document.getElementById('subjects-stats-drawer-tab');
-  const statsDrawerArrow = document.getElementById('subjects-stats-drawer-arrow');
+  }
+  const statsDrawer = viewContainer.querySelector('#subjects-stats-drawer');
+  const statsDrawerTab = viewContainer.querySelector('#subjects-stats-drawer-tab');
+  const statsDrawerArrow = viewContainer.querySelector('#subjects-stats-drawer-arrow');
 
   if (statsDrawer && statsDrawerTab) {
     let isStatsDrawerOpen = false;

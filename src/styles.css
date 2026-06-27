@@ -3979,12 +3979,16 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 
 
 
+
+
+
+
 /* Dashboard Top Panel Drawer styles */
 .subjects-dashboard-top {
   position: fixed;
   top: 90px;
-  right: -520px;
-  width: 500px;
+  right: -670px;
+  width: 650px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
@@ -3992,8 +3996,8 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  padding: 20px;
+  gap: 8px;
+  padding: 14px;
   transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
 }
@@ -4006,7 +4010,7 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
 .subjects-drawer-tab {
   position: absolute;
   left: -90px;
-  top: 50px;
+  top: 12px;
   height: 38px;
   background: var(--primary);
   color: #171330;
