@@ -26,6 +26,9 @@ let drivePathStack = [];
 // Current sorting mode for topics tab ('syllabus' or 'importance')
 let activeTopicSort = 'syllabus';
 
+// Subject page time tracker — interval fires every 60s while on subject-dashboard
+let subjectPageTimerInterval = null;
+
 // DOM element references
 let viewContainer;
 let headerTitleText;
@@ -60,6 +63,8 @@ async function init() {
   navAlgo = document.getElementById('nav-algo');
   navAbout = document.getElementById('nav-about');
   navSyllabus = document.getElementById('nav-syllabus');
+  const navNotes = document.getElementById('nav-notes');
+  const navWhiteboard = document.getElementById('nav-whiteboard');
   lightbox = document.getElementById('lightbox');
   lightboxImg = document.getElementById('lightbox-img');
   lightboxCloseBtn = document.getElementById('lightbox-close-btn');
@@ -156,6 +161,16 @@ function bindEvents() {
     navAbout.addEventListener('click', () => {
       store.navigateTo('about');
     });
+  }
+
+  const navNotesEl = document.getElementById('nav-notes');
+  if (navNotesEl) {
+    navNotesEl.addEventListener('click', () => store.navigateTo('notes-app'));
+  }
+
+  const navWhiteboardEl = document.getElementById('nav-whiteboard');
+  if (navWhiteboardEl) {
+    navWhiteboardEl.addEventListener('click', () => store.navigateTo('whiteboard-app'));
   }
 
   if (navSyllabus) {
@@ -327,6 +342,10 @@ function updateSidebarActiveState(view) {
   if (navAlgo) navAlgo.classList.remove('active');
   if (navAbout) navAbout.classList.remove('active');
   if (navSyllabus) navSyllabus.classList.remove('active');
+  const navNotesEl = document.getElementById('nav-notes');
+  const navWbEl = document.getElementById('nav-whiteboard');
+  if (navNotesEl) navNotesEl.classList.remove('active');
+  if (navWbEl) navWbEl.classList.remove('active');
 
   if (view === 'selection') {
     navSelection.classList.add('active');
@@ -340,6 +359,10 @@ function updateSidebarActiveState(view) {
     if (navAbout) navAbout.classList.add('active');
   } else if (view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution') {
     if (navAlgo) navAlgo.classList.add('active');
+  } else if (view === 'notes-app') {
+    if (navNotesEl) navNotesEl.classList.add('active');
+  } else if (view === 'whiteboard-app') {
+    if (navWbEl) navWbEl.classList.add('active');
   }
 }
 
@@ -414,6 +437,12 @@ function updateHeader(view, data) {
   } else if (view === 'leetcode-webview') {
     headerTitleText.textContent = q ? q.question_name : "LeetCode";
     headerSubtitleText.textContent = "In-app LeetCode Browser";
+  } else if (view === 'notes-app') {
+    headerTitleText.textContent = "Notes";
+    headerSubtitleText.textContent = "Your personal study notes, all saved locally";
+  } else if (view === 'whiteboard-app') {
+    headerTitleText.textContent = "Whiteboard";
+    headerSubtitleText.textContent = "Sketch, draw, and brainstorm — all saved locally";
   }
 
   // View on LeetCode button visibility in header
@@ -498,6 +527,12 @@ function handleHeaderFilterChange() {
 
 // Dispatch to individual view renderers
 async function renderView(view, data) {
+  // Clear subject page timer when leaving subject-dashboard
+  if (subjectPageTimerInterval) {
+    clearInterval(subjectPageTimerInterval);
+    subjectPageTimerInterval = null;
+  }
+
   // Toggle padding class for fullscreen views (PDF preview, LeetCode webview)
   if (view === 'pdf-viewer' || view === 'leetcode-webview') {
     viewContainer.classList.add('no-padding');
@@ -548,6 +583,12 @@ async function renderView(view, data) {
         break;
       case 'leetcode-webview':
         renderLeetcodeWebview();
+        break;
+      case 'notes-app':
+        renderNotesView();
+        break;
+      case 'whiteboard-app':
+        renderWhiteboardView();
         break;
       default:
         viewContainer.innerHTML = `<div>View "${view}" not found.</div>`;
@@ -948,7 +989,7 @@ async function renderSubjectsView() {
     const timeKey = `focus_fox_study_time_${subj.id}`;
     let studyTime = localStorage.getItem(timeKey);
     if (!studyTime) {
-      studyTime = (subj.name.toLowerCase().includes('intelligence') || subj.name.toLowerCase().includes('computational')) ? '3h 20m studied' : '0m studied';
+      studyTime = '0m studied';
       localStorage.setItem(timeKey, studyTime);
     }
 
@@ -965,10 +1006,12 @@ async function renderSubjectsView() {
 
   const overallProgressPercentage = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0;
 
-  // Calculate dynamic total study time from subjects
+  // Calculate dynamic total study time — read fresh from localStorage for each subject
+  // (this includes time logged by the subject-page timer during this session)
   let totalMinutes = 0;
   subjectsData.forEach(subj => {
-    const timeStr = subj.studyTime || '';
+    const timeKey = `focus_fox_study_time_${subj.id}`;
+    const timeStr = localStorage.getItem(timeKey) || subj.studyTime || '';
     const matchHoursMins = timeStr.match(/(\d+)\s*h\s*(\d+)\s*m/i);
     const matchHoursOnly = timeStr.match(/(\d+)\s*h/i);
     const matchMinsOnly = timeStr.match(/(\d+)\s*m/i);
@@ -1042,37 +1085,8 @@ async function renderSubjectsView() {
   });
 
   const heatmapHtml = `
-    <div class="study-activity-card fade-in">
-      <div class="activity-header">
-        <span class="activity-title">Study Activity</span>
-        <select class="activity-select">
-          <option>This Month</option>
-          <option>Last Month</option>
-        </select>
-      </div>
-      <div class="heatmap-container">
-        <div class="heatmap-wrapper">
-          <div class="heatmap-labels">
-            <span class="heatmap-row-label">M</span>
-            <span class="heatmap-row-label">W</span>
-            <span class="heatmap-row-label">F</span>
-          </div>
-          <div class="heatmap-grid">
-            ${heatmapCellsHtml}
-          </div>
-        </div>
-        <div class="heatmap-legend">
-          <span>Less</span>
-          <div class="legend-cells">
-            <div class="heatmap-cell"></div>
-            <div class="heatmap-cell level-1"></div>
-            <div class="heatmap-cell level-2"></div>
-            <div class="heatmap-cell level-3"></div>
-            <div class="heatmap-cell level-4"></div>
-          </div>
-          <span>More</span>
-        </div>
-      </div>
+    <div class="study-activity-card fade-in" style="justify-content: center; align-items: center; min-height: 120px; overflow: hidden; padding: 6px;">
+      <lottie-player src="/animation/Blue_Whale.json" background="transparent" speed="1" style="width: 100%; max-width: 480px; height: 100%; max-height: 110px;" loop autoplay></lottie-player>
     </div>
   `;
 
@@ -1241,6 +1255,396 @@ async function renderSubjectsView() {
       openHeatmapAnalyticsModal(subjectsData, overallProgressPercentage);
     });
   }
+}
+
+// Function to handle Add Subject Custom Modal popup
+// =====================================================================
+// Full-page Notes View (sidebar nav)
+// =====================================================================
+function renderNotesView() {
+  viewContainer.innerHTML = `
+    <div class="fade-in" style="display: flex; flex-direction: column; height: 100%; gap: 0;">
+      <!-- Notes full-page layout -->
+      <div style="display: flex; height: 100%; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--card-shadow);">
+        <!-- Sidebar -->
+        <div style="display: flex; flex-direction: column; width: 220px; flex-shrink: 0; border-right: 1px solid var(--border); background: var(--bg);">
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text);">📝 Pages</span>
+            <button class="tool-tile-btn" id="notes-new-page-btn">+ New</button>
+          </div>
+          <div class="notes-sidebar" id="notes-sidebar" style="width: 100%; flex: 1; overflow-y: auto;"></div>
+        </div>
+        <!-- Editor area -->
+        <div style="display: flex; flex-direction: column; flex: 1; overflow: hidden; background: var(--surface);">
+          <input class="notes-page-title-input" id="notes-page-title" placeholder="Page title..."
+            style="padding: 14px 20px; font-size: 1rem; font-weight: 700; border-radius: 0; border-bottom: 1px solid var(--border);" />
+          <textarea class="notes-textarea" id="notes-textarea" placeholder="Start writing here..."
+            style="flex: 1; padding: 16px 20px; font-size: 0.88rem; line-height: 1.7;"></textarea>
+        </div>
+      </div>
+    </div>
+  `;
+  initNotesTile();
+}
+
+// =====================================================================
+// Full-page Whiteboard View (sidebar nav)
+// =====================================================================
+function renderWhiteboardView() {
+  viewContainer.innerHTML = `
+    <div class="fade-in" style="display: flex; flex-direction: column; height: 100%; gap: 0;">
+      <div style="display: flex; flex-direction: column; height: 100%; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--card-shadow);">
+        <!-- Whiteboard header toolbar -->
+        <div class="tool-tile-header" style="padding: 10px 16px; border-radius: 0;">
+          <span class="tool-tile-title" style="font-size: 0.88rem;">🎨 Whiteboard</span>
+          <div class="tool-tile-header-actions">
+            <div class="wb-board-nav">
+              <button id="wb-prev-btn" title="Previous board">&#8249;</button>
+              <span id="wb-board-label" style="min-width: 60px; text-align: center;">Board 1</span>
+              <button id="wb-next-btn" title="Next board">&#8250;</button>
+            </div>
+            <button class="tool-tile-btn" id="wb-new-board-btn">+ Board</button>
+          </div>
+        </div>
+        <!-- Canvas -->
+        <div class="whiteboard-canvas-wrap" id="wb-canvas-wrap" style="flex: 1;">
+          <canvas id="wb-canvas"></canvas>
+        </div>
+        <!-- Toolbar -->
+        <div class="whiteboard-toolbar" style="padding: 8px 16px; gap: 10px;">
+          <div class="wb-color-swatch active" style="background:#c0a6ff; width:20px; height:20px;" data-color="#c0a6ff" title="Purple"></div>
+          <div class="wb-color-swatch" style="background:#60a5fa; width:20px; height:20px;" data-color="#60a5fa" title="Blue"></div>
+          <div class="wb-color-swatch" style="background:#34d399; width:20px; height:20px;" data-color="#34d399" title="Green"></div>
+          <div class="wb-color-swatch" style="background:#fb923c; width:20px; height:20px;" data-color="#fb923c" title="Orange"></div>
+          <div class="wb-color-swatch" style="background:#f87171; width:20px; height:20px;" data-color="#f87171" title="Red"></div>
+          <div class="wb-color-swatch" style="background:#facc15; width:20px; height:20px;" data-color="#facc15" title="Yellow"></div>
+          <div class="wb-color-swatch" style="background:#f1f5f9; width:20px; height:20px;" data-color="#f1f5f9" title="White"></div>
+          <div class="wb-color-swatch" style="background:#1e1b4b; width:20px; height:20px;" data-color="#1e1b4b" title="Dark"></div>
+          <div class="wb-separator"></div>
+          <span style="font-size: 0.72rem; color: var(--subtext);">Size</span>
+          <input type="range" class="wb-size-slider" id="wb-size" min="1" max="30" value="3" title="Pen size" style="width: 80px;" />
+          <div class="wb-separator"></div>
+          <button class="wb-tool-btn" id="wb-eraser-btn" title="Eraser">⌫ Erase</button>
+          <button class="wb-tool-btn" id="wb-undo-btn" title="Undo">↩ Undo</button>
+          <button class="wb-tool-btn" id="wb-clear-btn" title="Clear board">🗑 Clear</button>
+        </div>
+      </div>
+    </div>
+  `;
+  initWhiteboardTile();
+}
+
+// =====================================================================
+// Notes Tile — multi-page notes with local storage
+// =====================================================================
+function initNotesTile() {
+  const NOTES_KEY = 'focus_fox_notes';
+  const sidebar = document.getElementById('notes-sidebar');
+  const titleInput = document.getElementById('notes-page-title');
+  const textarea = document.getElementById('notes-textarea');
+  const newPageBtn = document.getElementById('notes-new-page-btn');
+
+  if (!sidebar || !titleInput || !textarea || !newPageBtn) return;
+
+  // Load or initialize
+  let notesData = (() => {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY)) || { pages: [], activeId: null }; }
+    catch { return { pages: [], activeId: null }; }
+  })();
+
+  // Ensure at least one default page
+  if (notesData.pages.length === 0) {
+    const defaultId = Date.now().toString();
+    notesData.pages.push({ id: defaultId, title: 'My Notes', content: '' });
+    notesData.activeId = defaultId;
+    save();
+  }
+
+  function save() {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notesData));
+  }
+
+  function getActive() {
+    return notesData.pages.find(p => p.id === notesData.activeId) || notesData.pages[0];
+  }
+
+  function renderSidebar() {
+    sidebar.innerHTML = notesData.pages.map(p => `
+      <div class="notes-page-item ${p.id === notesData.activeId ? 'active' : ''}" data-id="${p.id}">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${p.title || 'Untitled'}</span>
+        <button class="del-page-btn" data-del="${p.id}" title="Delete page">×</button>
+      </div>
+    `).join('');
+
+    // Page item click
+    sidebar.querySelectorAll('.notes-page-item').forEach(item => {
+      item.addEventListener('click', e => {
+        if (e.target.closest('.del-page-btn')) return;
+        saveCurrent();
+        notesData.activeId = item.getAttribute('data-id');
+        save();
+        loadActive();
+        renderSidebar();
+      });
+    });
+
+    // Delete page click
+    sidebar.querySelectorAll('.del-page-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const delId = btn.getAttribute('data-del');
+        if (notesData.pages.length <= 1) return; // keep at least one
+        notesData.pages = notesData.pages.filter(p => p.id !== delId);
+        if (notesData.activeId === delId) {
+          notesData.activeId = notesData.pages[0].id;
+        }
+        save();
+        loadActive();
+        renderSidebar();
+      });
+    });
+  }
+
+  function loadActive() {
+    const page = getActive();
+    if (!page) return;
+    titleInput.value = page.title;
+    textarea.value = page.content;
+  }
+
+  function saveCurrent() {
+    const page = getActive();
+    if (!page) return;
+    page.title = titleInput.value || 'Untitled';
+    page.content = textarea.value;
+    save();
+  }
+
+  // Auto-save on input
+  titleInput.addEventListener('input', () => {
+    const page = getActive();
+    if (page) { page.title = titleInput.value; save(); renderSidebar(); }
+  });
+  textarea.addEventListener('input', () => {
+    const page = getActive();
+    if (page) { page.content = textarea.value; save(); }
+  });
+
+  // New page button
+  newPageBtn.addEventListener('click', () => {
+    saveCurrent();
+    const newId = Date.now().toString();
+    notesData.pages.push({ id: newId, title: 'New Page', content: '' });
+    notesData.activeId = newId;
+    save();
+    loadActive();
+    renderSidebar();
+  });
+
+  // Initial render
+  renderSidebar();
+  loadActive();
+}
+
+// =====================================================================
+// Whiteboard Tile — multi-board canvas drawing with undo + local save
+// =====================================================================
+function initWhiteboardTile() {
+  const WB_KEY = 'focus_fox_whiteboards';
+  const canvas = document.getElementById('wb-canvas');
+  const wrap = document.getElementById('wb-canvas-wrap');
+  const boardLabel = document.getElementById('wb-board-label');
+  const prevBtn = document.getElementById('wb-prev-btn');
+  const nextBtn = document.getElementById('wb-next-btn');
+  const newBoardBtn = document.getElementById('wb-new-board-btn');
+  const eraserBtn = document.getElementById('wb-eraser-btn');
+  const undoBtn = document.getElementById('wb-undo-btn');
+  const clearBtn = document.getElementById('wb-clear-btn');
+  const sizeSlider = document.getElementById('wb-size');
+
+  if (!canvas || !wrap) return;
+
+  const ctx = canvas.getContext('2d');
+  let boards = (() => {
+    try { return JSON.parse(localStorage.getItem(WB_KEY)) || [{ name: 'Board 1', dataUrl: null }]; }
+    catch { return [{ name: 'Board 1', dataUrl: null }]; }
+  })();
+  let currentBoardIdx = 0;
+  let currentColor = '#c0a6ff';
+  let penSize = 3;
+  let isErasing = false;
+  let isDrawing = false;
+  let lastX = 0, lastY = 0;
+  let undoStack = [];
+
+  function resizeCanvas() {
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    if (w === 0 || h === 0) return;
+    // Save current drawing
+    const snapshot = canvas.toDataURL();
+    canvas.width = w;
+    canvas.height = h;
+    // Restore drawing
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = snapshot;
+  }
+
+  function saveBoard() {
+    if (boards[currentBoardIdx]) {
+      boards[currentBoardIdx].dataUrl = canvas.toDataURL();
+      localStorage.setItem(WB_KEY, JSON.stringify(boards));
+    }
+  }
+
+  function loadBoard(idx) {
+    currentBoardIdx = idx;
+    undoStack = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const board = boards[idx];
+    if (board && board.dataUrl) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.src = board.dataUrl;
+    }
+    if (boardLabel) boardLabel.textContent = board ? board.name : `Board ${idx + 1}`;
+  }
+
+  function pushUndo() {
+    undoStack.push(canvas.toDataURL());
+    if (undoStack.length > 30) undoStack.shift();
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    pushUndo();
+    isDrawing = true;
+    const pos = getPos(e);
+    lastX = pos.x; lastY = pos.y;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    ctx.lineWidth = isErasing ? penSize * 4 : penSize;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = isErasing ? 'rgba(0,0,0,1)' : currentColor;
+    ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    lastX = pos.x; lastY = pos.y;
+  }
+
+  function endDraw(e) {
+    if (!isDrawing) return;
+    isDrawing = false;
+    ctx.globalCompositeOperation = 'source-over';
+    saveBoard();
+  }
+
+  // Canvas events
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', endDraw);
+
+  // Color swatches
+  document.querySelectorAll('.wb-color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.wb-color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      currentColor = swatch.getAttribute('data-color');
+      isErasing = false;
+      if (eraserBtn) eraserBtn.classList.remove('active');
+    });
+  });
+
+  // Size slider
+  if (sizeSlider) sizeSlider.addEventListener('input', () => { penSize = parseInt(sizeSlider.value); });
+
+  // Eraser
+  if (eraserBtn) eraserBtn.addEventListener('click', () => {
+    isErasing = !isErasing;
+    eraserBtn.classList.toggle('active', isErasing);
+  });
+
+  // Undo
+  if (undoBtn) undoBtn.addEventListener('click', () => {
+    if (undoStack.length === 0) return;
+    const prev = undoStack.pop();
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      saveBoard();
+    };
+    img.src = prev;
+  });
+
+  // Clear
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    pushUndo();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    saveBoard();
+  });
+
+  // Board navigation
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    saveBoard();
+    const newIdx = (currentBoardIdx - 1 + boards.length) % boards.length;
+    loadBoard(newIdx);
+  });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    saveBoard();
+    const newIdx = (currentBoardIdx + 1) % boards.length;
+    loadBoard(newIdx);
+  });
+  if (newBoardBtn) newBoardBtn.addEventListener('click', () => {
+    saveBoard();
+    const newName = `Board ${boards.length + 1}`;
+    boards.push({ name: newName, dataUrl: null });
+    localStorage.setItem(WB_KEY, JSON.stringify(boards));
+    loadBoard(boards.length - 1);
+  });
+
+  // Init canvas size and load first board
+  resizeCanvas();
+  // Use ResizeObserver to handle container resize
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      saveBoard();
+      resizeCanvas();
+      loadBoard(currentBoardIdx);
+    });
+    ro.observe(wrap);
+  }
+  loadBoard(0);
 }
 
 // Function to handle Add Subject Custom Modal popup
@@ -1840,6 +2244,29 @@ async function renderSubjectDashboardView() {
 
   // Load first tab (Topics)
   switchTab('topics');
+
+  // Start subject page time tracker — logs 1 min every 60s while on this page
+  if (subjectPageTimerInterval) clearInterval(subjectPageTimerInterval);
+  subjectPageTimerInterval = setInterval(() => {
+    if (store.selectedSubject) {
+      const timeKey = `focus_fox_study_time_${store.selectedSubject.id}`;
+      let current = localStorage.getItem(timeKey) || '0m studied';
+      let mins = 0;
+      const mhm = current.match(/(\d+)\s*h\s*(\d+)\s*m/i);
+      const mho = current.match(/(\d+)\s*h/i);
+      const mmo = current.match(/(\d+)\s*m/i);
+      if (mhm) mins = parseInt(mhm[1]) * 60 + parseInt(mhm[2]);
+      else if (mho) mins = parseInt(mho[1]) * 60;
+      else if (mmo) mins = parseInt(mmo[1]);
+      mins += 1;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      const newStr = h > 0 ? `${h}h ${m}m studied` : `${m}m studied`;
+      localStorage.setItem(timeKey, newStr);
+      // Also log to global study history
+      store.logStudyMinutes(1);
+    }
+  }, 60000);
 }
 
 // Switch between dashboard tabs

@@ -6091,3 +6091,300 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   transform: scale(1.05);
   box-shadow: 0 0 10px rgba(192, 166, 255, 0.3);
 }
+
+/* ======================================================
+   Dashboard Tools Row — Notes + Whiteboard Tiles
+   ====================================================== */
+.dashboard-tools-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.tool-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  transition: var(--transition-fast);
+}
+
+.tool-tile:hover {
+  border-color: var(--primary);
+}
+
+.tool-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.tool-tile-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tool-tile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tool-tile-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.7rem;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+
+.tool-tile-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.tool-tile-btn.icon-btn {
+  padding: 3px 6px;
+  font-size: 0.75rem;
+}
+
+/* ---------- Notes Tile ---------- */
+.notes-tile-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.notes-sidebar {
+  width: 110px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.notes-sidebar::-webkit-scrollbar { width: 4px; }
+.notes-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.notes-page-item {
+  padding: 7px 10px;
+  font-size: 0.72rem;
+  color: var(--subtext);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.notes-page-item:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.notes-page-item.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.notes-page-item .del-page-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 0.7rem;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.notes-page-item .del-page-btn:hover { opacity: 1; }
+
+.notes-editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notes-page-title-input {
+  padding: 5px 10px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  outline: none;
+  flex-shrink: 0;
+}
+
+.notes-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.73rem;
+  line-height: 1.5;
+  padding: 8px 10px;
+  resize: none;
+  outline: none;
+  font-family: var(--font-sans);
+  overflow-y: auto;
+}
+
+.notes-textarea::-webkit-scrollbar { width: 4px; }
+.notes-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.notes-empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.72rem;
+  color: var(--subtext);
+  opacity: 0.7;
+  text-align: center;
+  padding: 12px;
+}
+
+/* ---------- Whiteboard Tile ---------- */
+.whiteboard-tile-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.whiteboard-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+  background: var(--bg);
+}
+
+.whiteboard-canvas-wrap canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.whiteboard-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.wb-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.wb-color-swatch:hover, .wb-color-swatch.active {
+  transform: scale(1.3);
+  border-color: var(--text);
+}
+
+.wb-tool-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--subtext);
+  font-size: 0.67rem;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.wb-tool-btn:hover, .wb-tool-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.wb-separator {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.wb-size-slider {
+  width: 50px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.wb-board-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--subtext);
+}
+
+.wb-board-nav button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--subtext);
+  font-size: 0.8rem;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+.wb-board-nav button:hover { color: var(--text); }
+
+/* Video theme overlay fixes */
+body.video-theme-active .tool-tile,
+body.video-theme-active .notes-sidebar,
+body.video-theme-active .notes-page-title-input,
+body.video-theme-active .whiteboard-toolbar,
+body.video-theme-active .whiteboard-canvas-wrap {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+}
