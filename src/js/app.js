@@ -5489,10 +5489,16 @@ async function renderLeetcodeWebview() {
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
               Back
             </button>
-            <button id="lc-open-external" style="display:flex; align-items:center; gap:6px; background:var(--primary); border:none; border-radius:var(--radius-sm); padding:8px 16px; color:#fff; cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Open on LeetCode
-            </button>
+            <div style="display:flex; gap:12px;">
+              <button id="lc-view-solution" style="display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                View Solution
+              </button>
+              <button id="lc-open-external" style="display:flex; align-items:center; gap:6px; background:var(--primary); border:none; border-radius:var(--radius-sm); padding:8px 16px; color:#fff; cursor:pointer; font-size:0.84rem; font-weight:600; font-family:var(--font-sans); transition:var(--transition-fast);">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Open on LeetCode
+              </button>
+            </div>
           </div>
 
           <!-- Title + metadata -->
@@ -5519,6 +5525,11 @@ async function renderLeetcodeWebview() {
     // Back button
     document.getElementById('lc-back-btn')?.addEventListener('click', () => {
       store.goBack();
+    });
+
+    // View solution button
+    document.getElementById('lc-view-solution')?.addEventListener('click', () => {
+      store.navigateTo('algo-solution');
     });
 
     // Open in external browser
