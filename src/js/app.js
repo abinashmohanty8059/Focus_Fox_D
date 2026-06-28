@@ -244,6 +244,18 @@ function bindEvents() {
   // State Changed Listener
   window.addEventListener('state-changed', (e) => {
     const { view, data } = e.detail;
+    
+    // Toggle header and sidebar display for the full-screen selection startup page
+    const sidebar = document.getElementById('sidebar');
+    const header = document.querySelector('.app-header');
+    if (view === 'selection') {
+      if (sidebar) sidebar.style.display = 'none';
+      if (header) header.style.display = 'none';
+    } else {
+      if (sidebar) sidebar.style.display = 'flex';
+      if (header) header.style.display = 'flex';
+    }
+
     updateSidebarActiveState(view);
     updateHeader(view, data);
     syncGlobalWhiteboardDrawer(view);
