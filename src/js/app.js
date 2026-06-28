@@ -1365,9 +1365,10 @@ function syncGlobalWhiteboardDrawer(view) {
   const drawer = document.getElementById('global-whiteboard-drawer');
   if (!drawer) return;
 
-  const isAlgoView = view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution';
+  const isAlgoView = view === 'algo-topics' || view === 'algo-questions' || view === 'algo-solution' || view === 'leetcode-webview';
   if (!isAlgoView) {
     drawer.classList.remove('open', 'visible', 'side-left', 'side-right');
+    document.body.classList.remove('global-wb-open');
     return;
   }
 
@@ -1375,7 +1376,9 @@ function syncGlobalWhiteboardDrawer(view) {
   drawer.classList.add('visible');
   drawer.classList.remove('side-left');
   drawer.classList.add('side-right');
-  drawer.classList.toggle('open', drawer.dataset.open === 'true');
+  const isOpen = drawer.dataset.open === 'true';
+  drawer.classList.toggle('open', isOpen);
+  document.body.classList.toggle('global-wb-open', isOpen);
 }
 
 async function initScratchMusicPlayer() {
@@ -2982,12 +2985,15 @@ function initGlobalWhiteboardDrawer() {
   const tab = document.getElementById('global-whiteboard-tab');
   const resizer = document.getElementById('global-whiteboard-resizer');
   const savedWidth = parseInt(localStorage.getItem('focus_fox_global_wb_width') || '720', 10);
-  drawer.style.width = `${Math.max(380, Math.min(window.innerWidth, savedWidth))}px`;
+  const initialWidth = Math.max(380, Math.min(window.innerWidth, savedWidth));
+  drawer.style.width = `${initialWidth}px`;
+  document.documentElement.style.setProperty('--global-wb-width', `${initialWidth}px`);
 
   tab?.addEventListener('click', () => {
     const nextOpen = drawer.dataset.open !== 'true';
     drawer.dataset.open = nextOpen ? 'true' : 'false';
     drawer.classList.toggle('open', nextOpen);
+    document.body.classList.toggle('global-wb-open', nextOpen);
     syncGlobalWhiteboardDrawer(store.currentView);
   });
 
@@ -3002,6 +3008,7 @@ function initGlobalWhiteboardDrawer() {
     if (!resizing) return;
     const nextWidth = Math.max(380, Math.min(window.innerWidth, window.innerWidth - e.clientX));
     drawer.style.width = `${nextWidth}px`;
+    document.documentElement.style.setProperty('--global-wb-width', `${nextWidth}px`);
     localStorage.setItem('focus_fox_global_wb_width', String(nextWidth));
   });
 

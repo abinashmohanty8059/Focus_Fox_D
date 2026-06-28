@@ -5583,6 +5583,11 @@ aside.sidebar.collapsed .mini-music-player .player-volume-container {
   height: 100%;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--primary-rgb), 0.25) transparent;
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.global-wb-open .lc-reader-scroll {
+  padding-right: var(--global-wb-width, 720px);
 }
 
 .lc-reader-scroll::-webkit-scrollbar {
